@@ -49,10 +49,15 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     private MaterialButton btnClearTerminal;
     private MaterialButton btnCloseTerminal;
 
-    private Button keyCtrl;
-    private Button keyAlt;
+    private TextView keyCtrl;
+    private TextView keyAlt;
     private boolean ctrlKeyActive = false;
     private boolean altKeyActive = false;
+
+    private static final int MIN_FONT_SIZE_SP = 8;
+    private static final int MAX_FONT_SIZE_SP = 34;
+    private static final int DEFAULT_FONT_SIZE_SP = 13;
+    private int currentFontSizeSp = DEFAULT_FONT_SIZE_SP;
 
     private InstalledDistro distro;
 
@@ -99,20 +104,20 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     }
 
     private void setupKeyToolbar() {
-        Button keyEsc = findViewById(R.id.keyEsc);
-        Button keyTab = findViewById(R.id.keyTab);
+        TextView keyEsc = findViewById(R.id.keyEsc);
+        TextView keyTab = findViewById(R.id.keyTab);
         keyCtrl = findViewById(R.id.keyCtrl);
         keyAlt = findViewById(R.id.keyAlt);
-        Button keyUp = findViewById(R.id.keyUp);
-        Button keyDown = findViewById(R.id.keyDown);
-        Button keyLeft = findViewById(R.id.keyLeft);
-        Button keyRight = findViewById(R.id.keyRight);
-        Button keyCtrlC = findViewById(R.id.keyCtrlC);
-        Button keyCtrlD = findViewById(R.id.keyCtrlD);
-        Button keySlash = findViewById(R.id.keySlash);
-        Button keyMinus = findViewById(R.id.keyMinus);
-        Button keyPipe = findViewById(R.id.keyPipe);
-        Button keyTilde = findViewById(R.id.keyTilde);
+        TextView keyUp = findViewById(R.id.keyUp);
+        TextView keyDown = findViewById(R.id.keyDown);
+        TextView keyLeft = findViewById(R.id.keyLeft);
+        TextView keyRight = findViewById(R.id.keyRight);
+        TextView keyCtrlC = findViewById(R.id.keyCtrlC);
+        TextView keyCtrlD = findViewById(R.id.keyCtrlD);
+        TextView keySlash = findViewById(R.id.keySlash);
+        TextView keyMinus = findViewById(R.id.keyMinus);
+        TextView keyPipe = findViewById(R.id.keyPipe);
+        TextView keyTilde = findViewById(R.id.keyTilde);
 
         keyEsc.setOnClickListener(v -> sendBytes(new byte[]{27}));
         keyTab.setOnClickListener(v -> sendBytes(new byte[]{9}));
@@ -144,12 +149,28 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     private void updateKeyBarUi() {
         if (keyCtrl != null) {
-            keyCtrl.setBackgroundColor(ctrlKeyActive ? Color.parseColor("#38BDF8") : Color.parseColor("#1E293B"));
-            keyCtrl.setTextColor(ctrlKeyActive ? Color.BLACK : Color.WHITE);
+            keyCtrl.setBackgroundResource(ctrlKeyActive ? R.drawable.bg_terminal_key_active : R.drawable.bg_terminal_key);
+            keyCtrl.setTextColor(ctrlKeyActive ? Color.BLACK : Color.parseColor("#F0F6FC"));
         }
         if (keyAlt != null) {
-            keyAlt.setBackgroundColor(altKeyActive ? Color.parseColor("#38BDF8") : Color.parseColor("#1E293B"));
-            keyAlt.setTextColor(altKeyActive ? Color.BLACK : Color.WHITE);
+            keyAlt.setBackgroundResource(altKeyActive ? R.drawable.bg_terminal_key_active : R.drawable.bg_terminal_key);
+            keyAlt.setTextColor(altKeyActive ? Color.BLACK : Color.parseColor("#F0F6FC"));
+        }
+    }
+
+    private void changeFontSize(boolean increase) {
+        if (increase) {
+            if (currentFontSizeSp < MAX_FONT_SIZE_SP) currentFontSizeSp++;
+        } else {
+            if (currentFontSizeSp > MIN_FONT_SIZE_SP) currentFontSizeSp--;
+        }
+        getSharedPreferences("anlinux_prefs", MODE_PRIVATE)
+                .edit()
+                .putInt("terminal_font_size", currentFontSizeSp)
+                .apply();
+        if (terminalView != null) {
+            int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, currentFontSizeSp, getResources().getDisplayMetrics());
+            terminalView.setTextSize(px);
         }
     }
 
@@ -203,7 +224,9 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             }
 
             terminalSession = new TerminalSession(shellPath, cwd, args, env, 2000, this);
-            terminalView.setTextSize((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12, getResources().getDisplayMetrics()));
+            currentFontSizeSp = getSharedPreferences("anlinux_prefs", MODE_PRIVATE)
+                    .getInt("terminal_font_size", DEFAULT_FONT_SIZE_SP);
+            terminalView.setTextSize((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, currentFontSizeSp, getResources().getDisplayMetrics()));
             terminalView.setTypeface(Typeface.MONOSPACE);
             terminalView.setTerminalViewClient(this);
             terminalView.attachSession(terminalSession);
@@ -319,7 +342,12 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     @Override
     public float onScale(float scale) {
-        return 1.0f;
+        if (scale < 0.9f || scale > 1.1f) {
+            boolean increase = scale > 1.0f;
+            changeFontSize(increase);
+            return 1.0f;
+        }
+        return scale;
     }
 
     @Override

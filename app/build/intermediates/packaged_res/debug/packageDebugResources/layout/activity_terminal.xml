@@ -73,144 +73,269 @@
 
     <!-- Termux-style Extra Key Toolbar -->
     <HorizontalScrollView
+        android:id="@+id/keyToolbarScrollView"
         android:layout_width="match_parent"
-        android:layout_height="42dp"
-        android:background="#161B22"
-        android:scrollbars="none">
+        android:layout_height="48dp"
+        android:background="#0D1117"
+        android:scrollbars="none"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
 
-            <Button
+            <TextView
                 android:id="@+id/keyEsc"
-                android:layout_width="52dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="46dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="ESC"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyTab"
-                android:layout_width="52dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="46dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="TAB"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyCtrl"
-                android:layout_width="54dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="48dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="CTRL"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyAlt"
-                android:layout_width="52dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="46dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="ALT"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyUp"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="▲"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyDown"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="▼"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyLeft"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="◀"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyRight"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="▶"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyCtrlC"
-                android:layout_width="62dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="54dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="Ctrl+C"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyCtrlD"
-                android:layout_width="62dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="54dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="Ctrl+D"
-                android:textSize="11sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keySlash"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="/"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyMinus"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="-"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyPipe"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="|"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <Button
+            <TextView
                 android:id="@+id/keyTilde"
-                android:layout_width="44dp"
-                android:layout_height="34dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="42dp"
+                android:gravity="center"
+                android:background="@drawable/bg_terminal_key"
                 android:text="~"
-                android:textSize="12sp"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_marginEnd="4dp" />
+                android:textColor="#F0F6FC"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
     </HorizontalScrollView>
 

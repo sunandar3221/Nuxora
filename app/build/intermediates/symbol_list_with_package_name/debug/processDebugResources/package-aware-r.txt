@@ -3017,6 +3017,8 @@ drawable abc_textfield_search_material
 drawable abc_vector_test
 drawable avd_hide_password
 drawable avd_show_password
+drawable bg_terminal_key
+drawable bg_terminal_key_active
 drawable btn_checkbox_checked_mtrl
 drawable btn_checkbox_checked_to_unchecked_mtrl_animation
 drawable btn_checkbox_unchecked_mtrl
@@ -3423,6 +3425,7 @@ id keyRight
 id keySlash
 id keyTab
 id keyTilde
+id keyToolbarScrollView
 id keyUp
 id labeled
 id layout

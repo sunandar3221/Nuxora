@@ -8,10 +8,6 @@
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/layout/item_catalog_distro.xml"
     },
     {
-        "merged": "com.anlinux.app-mergeDebugResources-32:/layout/activity_install_wizard.xml",
-        "source": "com.anlinux.app-main-35:/layout/activity_install_wizard.xml"
-    },
-    {
         "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-32:/layout/item_installed_distro.xml",
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/layout/item_installed_distro.xml"
     },
@@ -24,12 +20,16 @@
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/layout/activity_terminal.xml"
     },
     {
-        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-32:/layout/fragment_tools.xml",
-        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/layout/fragment_tools.xml"
+        "merged": "com.anlinux.app-mergeDebugResources-32:/layout/activity_terminal.xml",
+        "source": "com.anlinux.app-main-35:/layout/activity_terminal.xml"
     },
     {
         "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-32:/layout/activity_install_wizard.xml",
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/layout/activity_install_wizard.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-32:/layout/fragment_tools.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/layout/fragment_tools.xml"
     },
     {
         "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-32:/layout/fragment_catalog.xml",

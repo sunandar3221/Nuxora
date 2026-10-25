@@ -32,6 +32,8 @@ color terminal_key_bg
 color terminal_text
 color tertiary
 color tertiary_container
+drawable bg_terminal_key
+drawable bg_terminal_key_active
 drawable ic_add
 drawable ic_delete
 drawable ic_distro_generic
@@ -97,6 +99,7 @@ id keyRight
 id keySlash
 id keyTab
 id keyTilde
+id keyToolbarScrollView
 id keyUp
 id navigation_catalog
 id navigation_distros
