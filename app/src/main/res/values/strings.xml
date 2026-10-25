@@ -1,0 +1,90 @@
+<resources>
+    <string name="app_name">AnLinux</string>
+    <string name="app_subtitle">Linux Runner untuk Android (Root &amp; Non-Root)</string>
+
+    <!-- Navigation -->
+    <string name="nav_my_distros">Distro Saya</string>
+    <string name="nav_catalog">Katalog</string>
+    <string name="nav_tools">Alat &amp; GUI</string>
+    <string name="nav_settings">Pengaturan</string>
+
+    <!-- Installed Distros -->
+    <string name="no_installed_distros_title">Belum Ada Distro Terinstall</string>
+    <string name="no_installed_distros_desc">Pilih distro dari katalog atau tambahkan distro custom untuk mulai menjalankan Linux di ponsel Anda.</string>
+    <string name="install_first_distro">Jelajahi Katalog</string>
+    <string name="btn_terminal">Terminal</string>
+    <string name="btn_start">Mulai</string>
+    <string name="btn_stop">Berhenti</string>
+    <string name="btn_delete">Hapus</string>
+    <string name="status_running">Berjalan</string>
+    <string name="status_stopped">Berhenti</string>
+    <string name="badge_root">Mode Root</string>
+    <string name="badge_non_root">Mode PRoot (Non-Root)</string>
+
+    <!-- Catalog -->
+    <string name="catalog_title">Pilih Distribusi Linux</string>
+    <string name="catalog_subtitle">Distro populer siap pakai tanpa butuh root ataupun dengan akses root penuh.</string>
+    <string name="btn_add_custom">Tambah Distro Custom</string>
+    <string name="btn_install">Pasang</string>
+
+    <!-- Wizard Install -->
+    <string name="install_distro">Instalasi Distro Linux</string>
+    <string name="step_mode_title">Pilih Mode Eksekusi</string>
+    <string name="mode_proot_title">Non-Root (PRoot) - Direkomendasikan</string>
+    <string name="mode_proot_desc">Bekerja di semua perangkat Android tanpa perlu unlock bootloader atau root. Menggunakan sistem PRoot untuk emulasi hak akses root.</string>
+    <string name="mode_root_title">Mode Root (Chroot)</string>
+    <string name="mode_root_desc">Memerlukan akses SuperSU/Magisk/KernelSU. Performa 100% native dengan mount langsung ke kernel sistem Android.</string>
+    <string name="step_options_title">Opsi Tambahan</string>
+    <string name="enable_storage_mount">Mount Penyimpanan Internal (/sdcard)</string>
+    <string name="enable_storage_desc">Akses file foto, dokumen, dan download Android langsung dari dalam Linux.</string>
+    <string name="distro_name_label">Nama Tampilan Distro</string>
+    <string name="btn_start_install">Mulai Unduh &amp; Pasang</string>
+    <string name="installing_title">Memasang Distro…</string>
+    <string name="installing_status_download">Mengunduh RootFS…</string>
+    <string name="installing_status_extract">Mengekstrak berkas sistem…</string>
+    <string name="installing_status_init">Mengkonfigurasi DNS &amp; lingkungan…</string>
+    <string name="install_success">Distro berhasil dipasang!</string>
+    <string name="install_failed">Gagal memasang distro: %s</string>
+
+    <!-- Custom Distro Dialog -->
+    <string name="custom_distro_title">Tambah Distro Custom</string>
+    <string name="custom_distro_desc">Masukkan tautan langsung (.tar.gz atau .tar.xz) dari image rootfs Linux Anda.</string>
+    <string name="hint_distro_name">Contoh: Void Linux / NixOS / MyRootfs</string>
+    <string name="hint_distro_url">https://domain.com/rootfs.tar.xz</string>
+    <string name="label_select_local_file">Atau Pilih Berkas Arsip Lokal (.tar.xz/.tar.gz)</string>
+    <string name="btn_browse_file">Pilih Berkas</string>
+    <string name="btn_cancel">Batal</string>
+    <string name="btn_save">Simpan &amp; Lanjutkan</string>
+
+    <!-- Terminal -->
+    <string name="terminal_title">Terminal Linux</string>
+    <string name="terminal_hint">Ketik perintah di sini…</string>
+    <string name="btn_send">Kirim</string>
+    <string name="terminal_cleared">Layar terminal dibersihkan.</string>
+
+    <!-- Tools -->
+    <string name="tools_title">Alat &amp; Panduan Desktop GUI</string>
+    <string name="tools_subtitle">Jalankan desktop grafis (GUI) seperti XFCE, pasang VNC Server, atau integrasi audio.</string>
+    <string name="tool_xfce_title">Pasang Desktop XFCE4</string>
+    <string name="tool_xfce_desc">Desktop ringan, responsif, dan mudah digunakan untuk pengalaman komputer penuh di HP.</string>
+    <string name="tool_vnc_title">Jalankan VNC Server</string>
+    <string name="tool_vnc_desc">Koneksikan ke antarmuka grafis menggunakan aplikasi VNC Viewer (port 5901).</string>
+    <string name="tool_audio_title">Aktifkan Audio (PulseAudio)</string>
+    <string name="tool_audio_desc">Jalankan server suara agar Linux dapat memutar audio langsung ke speaker HP.</string>
+    <string name="tool_dns_title">Perbaiki Masalah Koneksi (DNS)</string>
+    <string name="tool_dns_desc">Otomatis atur /etc/resolv.conf ke Google DNS (8.8.8.8) jika apt/apk gagal konek.</string>
+    <string name="btn_copy_command">Salin Perintah</string>
+    <string name="btn_open_vnc">Buka VNC Viewer</string>
+    <string name="command_copied">Perintah disalin ke papan klip!</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Pengaturan</string>
+    <string name="setting_device_arch">Arsitektur Perangkat: %s</string>
+    <string name="setting_root_status">Status Root: %s</string>
+    <string name="root_available">Tersedia (Akses Superuser Aktif)</string>
+    <string name="root_unavailable">Tidak Ada (Hanya Mode Non-Root/PRoot)</string>
+    <string name="setting_wakelock_title">Cegah Ponsel Tidur (WakeLock)</string>
+    <string name="setting_wakelock_desc">Mencegah sistem Linux dimatikan oleh Android saat layar mati.</string>
+    <string name="setting_clear_all_title">Reset &amp; Bersihkan Cache</string>
+    <string name="setting_clear_all_desc">Hapus berkas unduhan sementara yang tidak digunakan.</string>
+</resources>
