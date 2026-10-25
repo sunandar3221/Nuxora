@@ -8,6 +8,10 @@
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/drawable/ic_nav_distros.xml"
     },
     {
+        "merged": "com.anlinux.app-debug-33:/layout_activity_install_wizard.xml.flat",
+        "source": "com.anlinux.app-main-35:/layout/activity_install_wizard.xml"
+    },
+    {
         "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-33:/drawable_ic_play.xml.flat",
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/drawable/ic_play.xml"
     },
@@ -72,10 +76,6 @@
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/drawable/ic_root.xml"
     },
     {
-        "merged": "com.anlinux.app-debug-33:/drawable_ic_keyboard.xml.flat",
-        "source": "com.anlinux.app-main-35:/drawable/ic_keyboard.xml"
-    },
-    {
         "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-33:/drawable_ic_nav_settings.xml.flat",
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/drawable/ic_nav_settings.xml"
     },
@@ -92,12 +92,12 @@
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/drawable/ic_add.xml"
     },
     {
-        "merged": "com.anlinux.app-debug-33:/layout_activity_terminal.xml.flat",
-        "source": "com.anlinux.app-main-35:/layout/activity_terminal.xml"
-    },
-    {
         "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-33:/layout_activity_terminal.xml.flat",
         "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/layout/activity_terminal.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-33:/drawable_ic_keyboard.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-35:/drawable/ic_keyboard.xml"
     },
     {
         "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-33:/drawable_ic_nav_catalog.xml.flat",

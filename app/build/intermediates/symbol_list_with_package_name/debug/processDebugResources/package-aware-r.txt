@@ -3633,6 +3633,7 @@ id stretch
 id submenuarrow
 id submit_area
 id supportScrollUp
+id switchInstallExtras
 id switchMountSdcard
 id switchWakeLock
 id tabMode

@@ -109,6 +109,7 @@ id radioRoot
 id recyclerViewCatalog
 id recyclerViewDistros
 id scrollLogs
+id switchInstallExtras
 id switchMountSdcard
 id switchWakeLock
 id terminalView

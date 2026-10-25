@@ -179,20 +179,24 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
                 File internalBin = new File(getFilesDir(), "bin");
                 File script = ScriptGenerator.createChrootLaunchScript(internalBin, new File(distro.getRootfsPath()), distro);
                 shellPath = "su";
-                args = new String[]{"-c", "/system/bin/sh " + script.getAbsolutePath()};
+                args = new String[]{"su", "-c", "/system/bin/sh " + script.getAbsolutePath()};
                 env = new String[]{
                         "TERM=xterm-256color",
                         "HOME=/root",
+                        "USER=root",
+                        "LOGNAME=root",
                         "LANG=C.UTF-8"
                 };
             } else {
                 PRootManager prootManager = new PRootManager(this);
                 File script = ScriptGenerator.createProotLaunchScript(prootManager, new File(distro.getRootfsPath()), distro);
                 shellPath = "/system/bin/sh";
-                args = new String[]{script.getAbsolutePath()};
+                args = new String[]{"sh", script.getAbsolutePath()};
                 env = new String[]{
                         "TERM=xterm-256color",
                         "HOME=/root",
+                        "USER=root",
+                        "LOGNAME=root",
                         "LANG=C.UTF-8",
                         "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
                 };

@@ -61,6 +61,9 @@ public final class ActivityInstallWizardBinding implements ViewBinding {
   public final ScrollView scrollLogs;
 
   @NonNull
+  public final MaterialSwitch switchInstallExtras;
+
+  @NonNull
   public final MaterialSwitch switchMountSdcard;
 
   @NonNull
@@ -87,10 +90,10 @@ public final class ActivityInstallWizardBinding implements ViewBinding {
       @NonNull ImageView imgDistroSelected, @NonNull LinearProgressIndicator progressBar,
       @NonNull LinearLayout progressSection, @NonNull RadioButton radioProot,
       @NonNull RadioButton radioRoot, @NonNull ScrollView scrollLogs,
-      @NonNull MaterialSwitch switchMountSdcard, @NonNull TextInputLayout tilDistroName,
-      @NonNull TextView tvDistroArch, @NonNull TextView tvDistroSelectedName,
-      @NonNull TextView tvLogs, @NonNull TextView tvProgressStatus,
-      @NonNull MaterialToolbar wizardToolbar) {
+      @NonNull MaterialSwitch switchInstallExtras, @NonNull MaterialSwitch switchMountSdcard,
+      @NonNull TextInputLayout tilDistroName, @NonNull TextView tvDistroArch,
+      @NonNull TextView tvDistroSelectedName, @NonNull TextView tvLogs,
+      @NonNull TextView tvProgressStatus, @NonNull MaterialToolbar wizardToolbar) {
     this.rootView = rootView;
     this.btnActionInstall = btnActionInstall;
     this.cardModeProot = cardModeProot;
@@ -102,6 +105,7 @@ public final class ActivityInstallWizardBinding implements ViewBinding {
     this.radioProot = radioProot;
     this.radioRoot = radioRoot;
     this.scrollLogs = scrollLogs;
+    this.switchInstallExtras = switchInstallExtras;
     this.switchMountSdcard = switchMountSdcard;
     this.tilDistroName = tilDistroName;
     this.tvDistroArch = tvDistroArch;
@@ -198,6 +202,12 @@ public final class ActivityInstallWizardBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.switchInstallExtras;
+      MaterialSwitch switchInstallExtras = ViewBindings.findChildViewById(rootView, id);
+      if (switchInstallExtras == null) {
+        break missingId;
+      }
+
       id = R.id.switchMountSdcard;
       MaterialSwitch switchMountSdcard = ViewBindings.findChildViewById(rootView, id);
       if (switchMountSdcard == null) {
@@ -242,8 +252,9 @@ public final class ActivityInstallWizardBinding implements ViewBinding {
 
       return new ActivityInstallWizardBinding((CoordinatorLayout) rootView, btnActionInstall,
           cardModeProot, cardModeRoot, etDistroName, imgDistroSelected, progressBar,
-          progressSection, radioProot, radioRoot, scrollLogs, switchMountSdcard, tilDistroName,
-          tvDistroArch, tvDistroSelectedName, tvLogs, tvProgressStatus, wizardToolbar);
+          progressSection, radioProot, radioRoot, scrollLogs, switchInstallExtras,
+          switchMountSdcard, tilDistroName, tvDistroArch, tvDistroSelectedName, tvLogs,
+          tvProgressStatus, wizardToolbar);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

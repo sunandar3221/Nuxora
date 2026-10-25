@@ -52,6 +52,7 @@ public class InstallWizardActivity extends AppCompatActivity {
     private MaterialCardView cardModeRoot;
     private TextInputEditText etDistroName;
     private MaterialSwitch switchMountSdcard;
+    private MaterialSwitch switchInstallExtras;
     private LinearLayout progressSection;
     private TextView tvProgressStatus;
     private LinearProgressIndicator progressBar;
@@ -99,6 +100,7 @@ public class InstallWizardActivity extends AppCompatActivity {
         cardModeRoot = findViewById(R.id.cardModeRoot);
         etDistroName = findViewById(R.id.etDistroName);
         switchMountSdcard = findViewById(R.id.switchMountSdcard);
+        switchInstallExtras = findViewById(R.id.switchInstallExtras);
         progressSection = findViewById(R.id.progressSection);
         tvProgressStatus = findViewById(R.id.tvProgressStatus);
         progressBar = findViewById(R.id.progressBar);
@@ -151,11 +153,12 @@ public class InstallWizardActivity extends AppCompatActivity {
                 ? etDistroName.getText().toString().trim()
                 : distro.getName();
         final boolean mountSd = switchMountSdcard.isChecked();
+        final boolean installExtras = switchInstallExtras != null && switchInstallExtras.isChecked();
 
-        new Thread(() -> performInstall(executionMode, distroDisplayName, mountSd)).start();
+        new Thread(() -> performInstall(executionMode, distroDisplayName, mountSd, installExtras)).start();
     }
 
-    private void performInstall(ExecutionMode executionMode, String distroDisplayName, boolean mountSd) {
+    private void performInstall(ExecutionMode executionMode, String distroDisplayName, boolean mountSd, boolean installExtras) {
         try {
             log("Memulai proses instalasi untuk " + distroDisplayName + "…");
             log("Mode: " + executionMode.getDisplayName());
@@ -234,9 +237,15 @@ public class InstallWizardActivity extends AppCompatActivity {
             log("Ekstraksi RootFS selesai!");
 
             // 4. Configure DNS & environments
-            setStatus("Mengkonfigurasi DNS & izin sistem…");
+            setStatus("Mengkonfigurasi DNS & paket sistem…");
             ScriptGenerator.setupDns(targetRootfsDir);
             log("DNS resolv.conf disetel ke Google & Cloudflare DNS.");
+            ScriptGenerator.setupExtrasScript(targetRootfsDir, installExtras);
+            if (installExtras) {
+                log("Paket penting (nano, curl, bash, sudo) diatur untuk dipasang otomatis saat sesi pertama.");
+            } else {
+                log("Skrip paket tambahan siap di /usr/local/bin/install-extras");
+            }
 
             // 5. Clean downloaded archive cache
             if (archiveFile.exists()) {
