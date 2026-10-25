@@ -1,0 +1,66 @@
+[
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/fragment_settings.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/fragment_catalog.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_catalog.xml"
+    },
+    {
+        "merged": "com.anlinux.app-mergeDebugResources-31:/layout/fragment_tools.xml",
+        "source": "com.anlinux.app-main-34:/layout/fragment_tools.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/activity_terminal.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/activity_terminal.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/item_catalog_distro.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/item_catalog_distro.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/activity_install_wizard.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/activity_install_wizard.xml"
+    },
+    {
+        "merged": "com.anlinux.app-mergeDebugResources-31:/layout/fragment_settings.xml",
+        "source": "com.anlinux.app-main-34:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "com.anlinux.app-mergeDebugResources-31:/layout/dialog_add_custom_distro.xml",
+        "source": "com.anlinux.app-main-34:/layout/dialog_add_custom_distro.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/fragment_tools.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_tools.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/activity_main.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/item_installed_distro.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/item_installed_distro.xml"
+    },
+    {
+        "merged": "com.anlinux.app-mergeDebugResources-31:/layout/fragment_installed.xml",
+        "source": "com.anlinux.app-main-34:/layout/fragment_installed.xml"
+    },
+    {
+        "merged": "com.anlinux.app-mergeDebugResources-31:/layout/item_installed_distro.xml",
+        "source": "com.anlinux.app-main-34:/layout/item_installed_distro.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/fragment_installed.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_installed.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-mergeDebugResources-31:/layout/dialog_add_custom_distro.xml",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/dialog_add_custom_distro.xml"
+    },
+    {
+        "merged": "com.anlinux.app-mergeDebugResources-31:/layout/item_catalog_distro.xml",
+        "source": "com.anlinux.app-main-34:/layout/item_catalog_distro.xml"
+    }
+]

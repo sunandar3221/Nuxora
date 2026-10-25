@@ -127,7 +127,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Bersihkan Berkas Sementara"
-                    style="@style/Widget.Material3.Button.Tonal"
+                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_gravity="end"
                     android:layout_marginTop="8dp" />
             </LinearLayout>

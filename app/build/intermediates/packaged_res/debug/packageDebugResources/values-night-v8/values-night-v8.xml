@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AnLinux" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#91CDFF</item>
+        <item name="colorOnPrimary">#003351</item>
+        <item name="colorPrimaryContainer">#004B72</item>
+        <item name="colorOnPrimaryContainer">#CBE6FF</item>
+        <item name="colorSecondary">#B7C9D9</item>
+        <item name="colorOnSecondary">#22323F</item>
+        <item name="colorSecondaryContainer">#394956</item>
+        <item name="colorOnSecondaryContainer">#D3E5F5</item>
+        <item name="android:colorBackground">#111416</item>
+        <item name="colorOnBackground">#E1E2E5</item>
+        <item name="colorSurface">#111416</item>
+        <item name="colorOnSurface">#E1E2E5</item>
+        <item name="colorSurfaceVariant">#41474D</item>
+        <item name="colorOnSurfaceVariant">#C2C7CF</item>
+        <item name="colorOutline">#8C9199</item>
+    </style>
+</resources>

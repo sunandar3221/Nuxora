@@ -1,0 +1,122 @@
+[
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_distro_generic.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_distro_generic.xml"
+    },
+    {
+        "merged": "com.anlinux.app-debug-32:/layout_item_installed_distro.xml.flat",
+        "source": "com.anlinux.app-main-34:/layout/item_installed_distro.xml"
+    },
+    {
+        "merged": "com.anlinux.app-debug-32:/layout_fragment_installed.xml.flat",
+        "source": "com.anlinux.app-main-34:/layout/fragment_installed.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_play.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_play.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_fragment_tools.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_tools.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_activity_main.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_activity_install_wizard.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/activity_install_wizard.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_launcher_linux.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_launcher_linux.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_nav_settings.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_nav_settings.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_fragment_installed.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_installed.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/menu_bottom_navigation_menu.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/menu/bottom_navigation_menu.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_activity_terminal.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/activity_terminal.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_nav_tools.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_nav_tools.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_nav_distros.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_nav_distros.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_delete.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_delete.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_fragment_settings.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "com.anlinux.app-debug-32:/layout_fragment_tools.xml.flat",
+        "source": "com.anlinux.app-main-34:/layout/fragment_tools.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_dialog_add_custom_distro.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/dialog_add_custom_distro.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_nav_catalog.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_nav_catalog.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_terminal.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_terminal.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_fragment_catalog.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/fragment_catalog.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_item_catalog_distro.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/item_catalog_distro.xml"
+    },
+    {
+        "merged": "com.anlinux.app-debug-32:/layout_dialog_add_custom_distro.xml.flat",
+        "source": "com.anlinux.app-main-34:/layout/dialog_add_custom_distro.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_root.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_root.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_stop.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_stop.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_add.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_add.xml"
+    },
+    {
+        "merged": "com.anlinux.app-debug-32:/layout_item_catalog_distro.xml.flat",
+        "source": "com.anlinux.app-main-34:/layout/item_catalog_distro.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/layout_item_installed_distro.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/layout/item_installed_distro.xml"
+    },
+    {
+        "merged": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-debug-32:/drawable_ic_shield.xml.flat",
+        "source": "/home/wellkops/.gradle/daemon/8.7/com.anlinux.app-main-34:/drawable/ic_shield.xml"
+    },
+    {
+        "merged": "com.anlinux.app-debug-32:/layout_fragment_settings.xml.flat",
+        "source": "com.anlinux.app-main-34:/layout/fragment_settings.xml"
+    }
+]

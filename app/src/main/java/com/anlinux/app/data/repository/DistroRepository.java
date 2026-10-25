@@ -15,13 +15,14 @@ public class DistroRepository {
         Distro ubuntu = new Distro(
                 "ubuntu",
                 "Ubuntu",
-                "24.04 LTS (Noble)",
-                "Distro paling populer di dunia, sangat ramah pemula, dukungan paket software APT terlengkap.",
+                "22.04 / 24.04 LTS",
+                "Distro paling populer, sangat ramah pemula, dukungan paket software APT terlengkap.",
                 R.drawable.ic_distro_generic
         );
-        ubuntu.addRootfsUrl("aarch64", "https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-arm64-root.tar.xz");
-        ubuntu.addRootfsUrl("armhf", "https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-armhf-root.tar.xz");
-        ubuntu.addRootfsUrl("x86_64", "https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64-root.tar.xz");
+        ubuntu.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Ubuntu/arm64/ubuntu-rootfs-arm64.tar.xz");
+        ubuntu.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Ubuntu/armhf/ubuntu-rootfs-armhf.tar.xz");
+        ubuntu.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Ubuntu/amd64/ubuntu-rootfs-amd64.tar.xz");
+        ubuntu.addRootfsUrl("i386", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Ubuntu/i386/ubuntu-rootfs-i386.tar.xz");
         list.add(ubuntu);
 
         // 2. Debian
@@ -32,10 +33,10 @@ public class DistroRepository {
                 "Batu fondasi dari banyak distro Linux, terkenal sangat stabil, ringan, dan andal.",
                 R.drawable.ic_distro_generic
         );
-        debian.addRootfsUrl("aarch64", "https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-arm64v8/bookworm/rootfs.tar.xz");
-        debian.addRootfsUrl("armhf", "https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-arm32v7/bookworm/rootfs.tar.xz");
-        debian.addRootfsUrl("x86_64", "https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-amd64/bookworm/rootfs.tar.xz");
-        debian.addRootfsUrl("i686", "https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-i386/bookworm/rootfs.tar.xz");
+        debian.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Debian/arm64/debian-rootfs-arm64.tar.xz");
+        debian.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Debian/armhf/debian-rootfs-armhf.tar.xz");
+        debian.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Debian/amd64/debian-rootfs-amd64.tar.xz");
+        debian.addRootfsUrl("i386", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Debian/i386/debian-rootfs-i386.tar.xz");
         list.add(debian);
 
         // 3. Kali Linux
@@ -46,9 +47,10 @@ public class DistroRepository {
                 "Distro khusus ethical hacking, cybersecurity, penetration testing, dan digital forensics.",
                 R.drawable.ic_distro_generic
         );
-        kali.addRootfsUrl("aarch64", "https://images.linuxcontainers.org/images/kali/current/arm64/default/rootfs.tar.xz");
-        kali.addRootfsUrl("armhf", "https://images.linuxcontainers.org/images/kali/current/armhf/default/rootfs.tar.xz");
-        kali.addRootfsUrl("x86_64", "https://images.linuxcontainers.org/images/kali/current/amd64/default/rootfs.tar.xz");
+        kali.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Kali/arm64/kali-rootfs-arm64.tar.xz");
+        kali.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Kali/armhf/kali-rootfs-armhf.tar.xz");
+        kali.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Kali/amd64/kali-rootfs-amd64.tar.xz");
+        kali.addRootfsUrl("i386", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Kali/i386/kali-rootfs-i386.tar.xz");
         list.add(kali);
 
         // 4. Alpine Linux
@@ -60,10 +62,10 @@ public class DistroRepository {
                 R.drawable.ic_distro_generic
         );
         alpine.setDefaultShell("/bin/sh");
-        alpine.addRootfsUrl("aarch64", "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/aarch64/alpine-minirootfs-3.19.1-aarch64.tar.gz");
+        alpine.addRootfsUrl("arm64", "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/aarch64/alpine-minirootfs-3.19.1-aarch64.tar.gz");
         alpine.addRootfsUrl("armhf", "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/armv7/alpine-minirootfs-3.19.1-armv7.tar.gz");
-        alpine.addRootfsUrl("x86_64", "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-minirootfs-3.19.1-x86_64.tar.gz");
-        alpine.addRootfsUrl("i686", "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86/alpine-minirootfs-3.19.1-x86.tar.gz");
+        alpine.addRootfsUrl("amd64", "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86_64/alpine-minirootfs-3.19.1-x86_64.tar.gz");
+        alpine.addRootfsUrl("i386", "https://dl-cdn.alpinelinux.org/alpine/v3.19/releases/x86/alpine-minirootfs-3.19.1-x86.tar.gz");
         list.add(alpine);
 
         // 5. Arch Linux
@@ -74,34 +76,35 @@ public class DistroRepository {
                 "Distro rolling release dengan paket perangkat lunak paling mutakhir dan manajer paket pacman.",
                 R.drawable.ic_distro_generic
         );
-        arch.addRootfsUrl("aarch64", "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz");
+        arch.addRootfsUrl("arm64", "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz");
         arch.addRootfsUrl("armhf", "http://os.archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz");
-        arch.addRootfsUrl("x86_64", "https://geo.mirror.pkgbuild.com/iso/latest/archlinux-bootstrap-x86_64.tar.zst");
         list.add(arch);
 
         // 6. Fedora
         Distro fedora = new Distro(
                 "fedora",
                 "Fedora Linux",
-                "40 Rawhide/Container",
+                "Rawhide/Cloud",
                 "Distro dari Red Hat dengan teknologi Linux terbaru dan manajer paket DNF.",
                 R.drawable.ic_distro_generic
         );
-        fedora.addRootfsUrl("aarch64", "https://images.linuxcontainers.org/images/fedora/40/arm64/default/rootfs.tar.xz");
-        fedora.addRootfsUrl("x86_64", "https://images.linuxcontainers.org/images/fedora/40/amd64/default/rootfs.tar.xz");
+        fedora.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Fedora/arm64/fedora-rootfs-arm64.tar.xz");
+        fedora.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Fedora/armhf/fedora-rootfs-armhf.tar.xz");
+        fedora.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Fedora/amd64/fedora-rootfs-amd64.tar.xz");
         list.add(fedora);
 
-        // 7. Void Linux
-        Distro voidLinux = new Distro(
-                "void",
-                "Void Linux",
+        // 7. openSUSE
+        Distro opensuse = new Distro(
+                "opensuse",
+                "openSUSE Leap",
                 "Current",
-                "Distro independen cepat tanpa systemd, menggunakan runit dan paket xbps.",
+                "Distro tangguh enterprise dengan manajer paket Zypper dan YaST.",
                 R.drawable.ic_distro_generic
         );
-        voidLinux.addRootfsUrl("aarch64", "https://repo-default.voidlinux.org/live/current/void-aarch64-ROOTFS.tar.xz");
-        voidLinux.addRootfsUrl("x86_64", "https://repo-default.voidlinux.org/live/current/void-x86_64-ROOTFS.tar.xz");
-        list.add(voidLinux);
+        opensuse.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/arm64/opensuse-rootfs-arm64.tar.xz");
+        opensuse.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/armhf/opensuse-rootfs-armhf.tar.xz");
+        opensuse.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/amd64/opensuse-rootfs-amd64.tar.xz");
+        list.add(opensuse);
 
         return list;
     }

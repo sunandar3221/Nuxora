@@ -46,7 +46,7 @@
             android:text="@string/install_first_distro"
             android:icon="@drawable/ic_nav_catalog"
             android:layout_marginTop="24dp"
-            style="@style/Widget.Material3.Button.Tonal" />
+            style="@style/Widget.Material3.Button.TonalButton" />
     </LinearLayout>
 
     <!-- Installed Distros List -->

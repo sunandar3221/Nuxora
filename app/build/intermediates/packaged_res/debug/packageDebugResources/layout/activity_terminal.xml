@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/terminal_bg">
+
+    <!-- Terminal Top Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="#1E293B"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="8dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_terminal"
+            app:tint="#38BDF8" />
+
+        <TextView
+            android:id="@+id/tvTerminalTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Linux Shell"
+            android:textColor="#F8FAFC"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:layout_marginStart="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClearTerminal"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:contentDescription="Clear"
+            app:icon="@drawable/ic_delete"
+            app:iconTint="#94A3B8" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseTerminal"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:contentDescription="Close"
+            app:icon="@drawable/ic_stop"
+            app:iconTint="#F87171" />
+    </LinearLayout>
+
+    <!-- Terminal Output Area -->
+    <ScrollView
+        android:id="@+id/terminalScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:fillViewport="true">
+
+        <TextView
+            android:id="@+id/tvTerminalOutput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textColor="@color/terminal_text"
+            android:textSize="13sp"
+            android:textIsSelectable="true"
+            android:lineSpacingExtra="2dp" />
+    </ScrollView>
+
+    <!-- Special Key Toolbar (Esc, Tab, Ctrl, Alt, Arrows, etc.) -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="@color/terminal_key_bg"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <Button
+                android:id="@+id/keyEsc"
+                android:layout_width="54dp"
+                android:layout_height="34dp"
+                android:text="ESC"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyTab"
+                android:layout_width="54dp"
+                android:layout_height="34dp"
+                android:text="TAB"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyCtrlC"
+                android:layout_width="58dp"
+                android:layout_height="34dp"
+                android:text="CTRL+C"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyCtrlD"
+                android:layout_width="58dp"
+                android:layout_height="34dp"
+                android:text="CTRL+D"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyUp"
+                android:layout_width="44dp"
+                android:layout_height="34dp"
+                android:text="▲"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyDown"
+                android:layout_width="44dp"
+                android:layout_height="34dp"
+                android:text="▼"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyLeft"
+                android:layout_width="44dp"
+                android:layout_height="34dp"
+                android:text="◀"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyRight"
+                android:layout_width="44dp"
+                android:layout_height="34dp"
+                android:text="▶"
+                android:textSize="11sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyPipe"
+                android:layout_width="44dp"
+                android:layout_height="34dp"
+                android:text="|"
+                android:textSize="12sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keySlash"
+                android:layout_width="44dp"
+                android:layout_height="34dp"
+                android:text="/"
+                android:textSize="12sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/keyTilde"
+                android:layout_width="44dp"
+                android:layout_height="34dp"
+                android:text="~"
+                android:textSize="12sp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_marginEnd="4dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Bottom Input Command Line -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1E293B"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/etTerminalInput"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:background="@drawable/ic_launcher_linux"
+            android:backgroundTint="#0F141C"
+            android:hint="@string/terminal_hint"
+            android:textColorHint="#64748B"
+            android:textColor="#F8FAFC"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:singleLine="true"
+            android:imeOptions="actionSend" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTerminalSend"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:text="@string/btn_send"
+            android:layout_marginStart="8dp"
+            style="@style/Widget.Material3.Button" />
+    </LinearLayout>
+
+</LinearLayout>

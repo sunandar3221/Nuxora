@@ -1,6 +1,9 @@
 package com.anlinux.app.core;
 
 import android.content.Context;
+import android.content.res.AssetManager;
+import android.os.Build;
+
 import com.anlinux.app.data.model.InstalledDistro;
 import com.anlinux.app.utils.DeviceUtils;
 
@@ -8,8 +11,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.OutputStream;
 
 public class PRootManager {
 
@@ -30,69 +32,59 @@ public class PRootManager {
         return prootBin;
     }
 
+    public File getBinDir() {
+        return binDir;
+    }
+
     public boolean isProotInstalled() {
-        return prootBin.exists() && prootBin.canExecute();
+        File loader = new File(binDir, "loader");
+        File talloc = new File(binDir, "libtalloc.so.2");
+        return prootBin.exists() && prootBin.canExecute() && loader.exists() && talloc.exists();
     }
 
     /**
-     * Download or prepare PRoot binary for current CPU architecture
+     * Extracts bundled PRoot binaries and libraries from APK assets to internal storage.
+     * Guaranteed 100% offline and no 404 error!
      */
     public void ensureProotBinary(ExtractionHelper.ProgressListener progressListener) throws Exception {
         if (isProotInstalled()) {
             return;
         }
 
-        String arch = DeviceUtils.getNormalizedArch();
-        // Official Termux / PRoot static binaries mirror
-        String downloadUrl = getProotDownloadUrl(arch);
-
+        String archDir = resolveAssetArchDir();
         if (progressListener != null) {
-            progressListener.onProgress("Mengunduh komponen PRoot (" + arch + ")…", 1);
+            progressListener.onProgress("Menyiapkan komponen PRoot (" + archDir + ")…", 1);
         }
 
-        downloadBinary(downloadUrl, prootBin);
-        prootBin.setExecutable(true, false);
-        prootBin.setReadable(true, false);
-    }
+        AssetManager assets = context.getAssets();
+        String[] files = {"proot", "loader", "libtalloc.so.2"};
 
-    private String getProotDownloadUrl(String arch) {
-        switch (arch) {
-            case "armhf":
-                return "https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Library/PRoot/armhf/proot";
-            case "x86_64":
-                return "https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Library/PRoot/x86_64/proot";
-            case "i686":
-                return "https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Library/PRoot/i686/proot";
-            case "aarch64":
-            default:
-                return "https://raw.githubusercontent.com/EXALAB/AnLinux-Resources/master/Library/PRoot/aarch64/proot";
-        }
-    }
+        for (String fileName : files) {
+            String assetPath = "bin/" + archDir + "/" + fileName;
+            File targetFile = new File(binDir, fileName);
 
-    private void downloadBinary(String urlStr, File targetFile) throws IOException {
-        URL url = new URL(urlStr);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(15000);
-        conn.setReadTimeout(15000);
-        conn.setRequestProperty("User-Agent", "AnLinux-Android/1.0");
-
-        if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-            throw new IOException("HTTP error: " + conn.getResponseCode() + " " + conn.getResponseMessage());
-        }
-
-        File tempFile = new File(targetFile.getParentFile(), targetFile.getName() + ".tmp");
-        try (InputStream in = conn.getInputStream();
-             FileOutputStream out = new FileOutputStream(tempFile)) {
-            byte[] buf = new byte[8192];
-            int read;
-            while ((read = in.read(buf)) != -1) {
-                out.write(buf, 0, read);
+            try (InputStream in = assets.open(assetPath);
+                 OutputStream out = new FileOutputStream(targetFile)) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, read);
+                }
             }
+
+            targetFile.setExecutable(true, false);
+            targetFile.setReadable(true, false);
         }
-        if (targetFile.exists()) {
-            targetFile.delete();
+    }
+
+    private String resolveAssetArchDir() {
+        for (String abi : Build.SUPPORTED_ABIS) {
+            if (abi.equalsIgnoreCase("arm64-v8a")) return "arm64-v8a";
+            if (abi.startsWith("armeabi")) return "armeabi-v7a";
+            if (abi.equalsIgnoreCase("x86_64")) return "x86_64";
+            if (abi.startsWith("x86")) return "x86";
         }
-        tempFile.renameTo(targetFile);
+        return "arm64-v8a"; // Default fallback
     }
 
     /**

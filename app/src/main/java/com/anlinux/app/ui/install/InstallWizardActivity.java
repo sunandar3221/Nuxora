@@ -263,18 +263,34 @@ public class InstallWizardActivity extends AppCompatActivity {
     }
 
     private void downloadFile(String downloadUrl, File targetFile) throws Exception {
+        downloadFileWithRedirects(downloadUrl, targetFile, 0);
+    }
+
+    private void downloadFileWithRedirects(String downloadUrl, File targetFile, int redirectCount) throws Exception {
+        if (redirectCount > 6) {
+            throw new Exception("Terlalu banyak pengalihan (Too many redirects) saat mengunduh.");
+        }
+
         URL url = new URL(downloadUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(20000);
-        conn.setReadTimeout(30000);
-        conn.setRequestProperty("User-Agent", "AnLinux-Android/1.0");
+        conn.setInstanceFollowRedirects(true);
+        conn.setConnectTimeout(30000);
+        conn.setReadTimeout(60000);
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36");
 
-        if (conn.getResponseCode() >= 300 && conn.getResponseCode() <= 308) {
+        int status = conn.getResponseCode();
+        if (status >= 300 && status <= 308) {
             String redirectUrl = conn.getHeaderField("Location");
             if (redirectUrl != null) {
-                downloadFile(redirectUrl, targetFile);
+                log("Mengikuti pengalihan URL…");
+                conn.disconnect();
+                downloadFileWithRedirects(redirectUrl, targetFile, redirectCount + 1);
                 return;
             }
+        }
+
+        if (status != HttpURLConnection.HTTP_OK) {
+            throw new Exception("HTTP " + status + " (" + conn.getResponseMessage() + ") untuk tautan: " + downloadUrl);
         }
 
         long totalSize = conn.getContentLengthLong();
@@ -288,16 +304,22 @@ public class InstallWizardActivity extends AppCompatActivity {
             while ((read = in.read(buf)) != -1) {
                 out.write(buf, 0, read);
                 downloaded += read;
-                if (System.currentTimeMillis() - lastLogTime > 1000) {
+                if (System.currentTimeMillis() - lastLogTime > 800) {
                     lastLogTime = System.currentTimeMillis();
                     if (totalSize > 0) {
                         int percent = (int) ((downloaded * 100) / totalSize);
                         log("Mengunduh: " + percent + "% (" + DeviceUtils.formatFileSize(downloaded) + " / " + DeviceUtils.formatFileSize(totalSize) + ")");
+                        mainHandler.post(() -> {
+                            progressBar.setIndeterminate(false);
+                            progressBar.setProgress(percent);
+                        });
                     } else {
                         log("Mengunduh: " + DeviceUtils.formatFileSize(downloaded));
                     }
                 }
             }
+        } finally {
+            conn.disconnect();
         }
     }
 

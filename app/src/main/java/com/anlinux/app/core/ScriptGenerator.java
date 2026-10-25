@@ -30,15 +30,27 @@ public class ScriptGenerator {
     public static File createProotLaunchScript(File internalBinDir, File rootfsDir, InstalledDistro distro) throws IOException {
         File script = new File(internalBinDir, "start_" + distro.getId() + ".sh");
         File prootBin = new File(internalBinDir, "proot");
+        File loaderBin = new File(internalBinDir, "loader");
 
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("unset LD_PRELOAD\n");
+        sb.append("BIN=\"").append(internalBinDir.getAbsolutePath()).append("\"\n");
         sb.append("PROOT=\"").append(prootBin.getAbsolutePath()).append("\"\n");
         sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
 
+        sb.append("export LD_LIBRARY_PATH=\"$BIN:$LD_LIBRARY_PATH\"\n");
+        sb.append("export PROOT_LOADER=\"").append(loaderBin.getAbsolutePath()).append("\"\n");
+        sb.append("export PROOT_TMP_DIR=\"$ROOTFS/tmp\"\n");
+
+        sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
+        sb.append("chmod 1777 \"$ROOTFS/tmp\"\n");
+
         sb.append("if [ ! -x \"$PROOT\" ]; then\n");
         sb.append("    chmod 755 \"$PROOT\"\n");
+        sb.append("fi\n");
+        sb.append("if [ -f \"$PROOT_LOADER\" ] && [ ! -x \"$PROOT_LOADER\" ]; then\n");
+        sb.append("    chmod 755 \"$PROOT_LOADER\"\n");
         sb.append("fi\n");
 
         sb.append("\"$PROOT\" \\\n");
@@ -132,9 +144,6 @@ public class ScriptGenerator {
         return script;
     }
 
-    /**
-     * Scripts for desktop environment, VNC, audio tools
-     */
     public static String getXfceInstallCommand() {
         return "apt update && apt install -y xfce4 xfce4-goodies tightvncserver dbus-x11";
     }
