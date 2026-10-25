@@ -23,25 +23,64 @@ public class ExtractionHelper {
     }
 
     /**
-     * Extract tar.gz, tar.xz, tar.bz2, or .tar rootfs archive
+     * Extract rootfs archive with automatic format detection via magic bytes.
+     * Supports .tar.xz, .tar.gz, .tar.bz2, and uncompressed .tar without relying on file extension.
      */
     public static void extractArchive(File archiveFile, File destinationDir, ProgressListener listener) throws Exception {
         if (!destinationDir.exists()) {
             destinationDir.mkdirs();
         }
 
-        String fileName = archiveFile.getName().toLowerCase();
+        if (!archiveFile.exists() || archiveFile.length() < 512) {
+            throw new Exception("Berkas arsip tidak ditemukan atau terlalu kecil (" + archiveFile.length() + " bytes).");
+        }
+
+        // Read magic header bytes to determine compression format accurately
+        byte[] magic = new byte[8];
+        try (InputStream testIn = new FileInputStream(archiveFile)) {
+            int read = testIn.read(magic);
+            if (read < 2) {
+                throw new Exception("Berkas arsip tidak dapat dibaca.");
+            }
+        }
+
+        // Check if server returned an HTML error or text page instead of an archive
+        if (magic[0] == '<' || (magic[0] == '{' && magic[1] == '"')) {
+            byte[] errBuf = new byte[512];
+            try (InputStream testIn = new FileInputStream(archiveFile)) {
+                int read = testIn.read(errBuf);
+                String errStr = new String(errBuf, 0, Math.max(0, read));
+                throw new Exception("Server mengembalikan halaman web / teks error, bukan berkas sistem: " + errStr.trim());
+            }
+        }
+
         InputStream fileInputStream = new BufferedInputStream(new FileInputStream(archiveFile));
         InputStream compressorStream;
 
-        if (fileName.endsWith(".tar.gz") || fileName.endsWith(".tgz")) {
+        // GZIP: 0x1F, 0x8B
+        if (magic[0] == 0x1F && (magic[1] & 0xFF) == 0x8B) {
             compressorStream = new GzipCompressorInputStream(fileInputStream);
-        } else if (fileName.endsWith(".tar.xz") || fileName.endsWith(".txz")) {
+        }
+        // XZ: 0xFD, '7', 'z', 'X', 'Z', 0x00
+        else if ((magic[0] & 0xFF) == 0xFD && magic[1] == 0x37 && magic[2] == 0x7A && magic[3] == 0x58 && magic[4] == 0x5A && magic[5] == 0x00) {
             compressorStream = new XZCompressorInputStream(fileInputStream);
-        } else if (fileName.endsWith(".tar.bz2") || fileName.endsWith(".tbz2")) {
+        }
+        // BZIP2: 'B', 'Z', 'h'
+        else if (magic[0] == 'B' && magic[1] == 'Z' && magic[2] == 'h') {
             compressorStream = new BZip2CompressorInputStream(fileInputStream);
-        } else {
-            compressorStream = fileInputStream;
+        }
+        // Fallback: Check file extension or treat as uncompressed tar
+        else {
+            String fileName = archiveFile.getName().toLowerCase();
+            if (fileName.endsWith(".tar.gz") || fileName.endsWith(".tgz")) {
+                compressorStream = new GzipCompressorInputStream(fileInputStream);
+            } else if (fileName.endsWith(".tar.xz") || fileName.endsWith(".txz")) {
+                compressorStream = new XZCompressorInputStream(fileInputStream);
+            } else if (fileName.endsWith(".tar.bz2") || fileName.endsWith(".tbz2")) {
+                compressorStream = new BZip2CompressorInputStream(fileInputStream);
+            } else {
+                compressorStream = fileInputStream;
+            }
         }
 
         try (TarArchiveInputStream tarInput = new TarArchiveInputStream(compressorStream)) {
@@ -75,15 +114,12 @@ public class ExtractionHelper {
                         if (Files.exists(link) || Files.isSymbolicLink(link)) {
                             Files.delete(link);
                         }
-                        // Create parent if needed
                         File parent = outputFile.getParentFile();
                         if (parent != null && !parent.exists()) {
                             parent.mkdirs();
                         }
                         Files.createSymbolicLink(link, target);
-                    } catch (Exception ignored) {
-                        // Symbolic links may fail on FAT32/SDCard, fallback gracefully
-                    }
+                    } catch (Exception ignored) {}
                 } else {
                     File parent = outputFile.getParentFile();
                     if (parent != null && !parent.exists()) {
@@ -97,7 +133,7 @@ public class ExtractionHelper {
                         }
                     }
 
-                    // Restore executable permissions if applicable
+                    // Restore executable / readable permissions
                     int mode = entry.getMode();
                     if ((mode & 0111) != 0) {
                         outputFile.setExecutable(true, false);

@@ -175,7 +175,21 @@ public class InstallWizardActivity extends AppCompatActivity {
             String arch = DeviceUtils.getNormalizedArch();
             String downloadUrl = distro.getUrlForArch(arch);
             File cacheDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
-            File archiveFile = new File(cacheDir, "rootfs_" + distro.getId() + ".tar.xz");
+
+            String fileExt = ".tar.xz";
+            if (localFileUriString != null) {
+                String lower = localFileUriString.toLowerCase();
+                if (lower.contains(".tar.gz") || lower.contains(".tgz")) fileExt = ".tar.gz";
+                else if (lower.contains(".tar.bz2")) fileExt = ".tar.bz2";
+            } else if (downloadUrl != null) {
+                String lower = downloadUrl.toLowerCase();
+                if (lower.contains(".tar.gz") || lower.contains(".tgz")) fileExt = ".tar.gz";
+                else if (lower.contains(".tar.bz2")) fileExt = ".tar.bz2";
+            }
+            File archiveFile = new File(cacheDir, "rootfs_" + distro.getId() + fileExt);
+            if (archiveFile.exists()) {
+                archiveFile.delete();
+            }
 
             if (localFileUriString != null) {
                 setStatus("Menyalin berkas arsip lokal…");
@@ -189,7 +203,7 @@ public class InstallWizardActivity extends AppCompatActivity {
                         out.write(buf, 0, read);
                     }
                 }
-                log("Berkas arsip lokal berhasil disalin.");
+                log("Berkas arsip lokal berhasil disalin (" + DeviceUtils.formatFileSize(archiveFile.length()) + ").");
             } else {
                 if (downloadUrl == null || downloadUrl.isEmpty()) {
                     throw new Exception("URL download tidak tersedia untuk arsitektur: " + arch);
@@ -198,6 +212,10 @@ public class InstallWizardActivity extends AppCompatActivity {
                 log("Mengunduh dari: " + downloadUrl);
                 downloadFile(downloadUrl, archiveFile);
                 log("Pengunduhan selesai. Ukuran berkas: " + DeviceUtils.formatFileSize(archiveFile.length()));
+            }
+
+            if (!archiveFile.exists() || archiveFile.length() < 100000) {
+                throw new Exception("Berkas arsip tidak lengkap (" + DeviceUtils.formatFileSize(archiveFile.length()) + "). Silakan coba unduh lagi.");
             }
 
             // 3. Extract Rootfs
@@ -274,8 +292,8 @@ public class InstallWizardActivity extends AppCompatActivity {
         URL url = new URL(downloadUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setInstanceFollowRedirects(true);
-        conn.setConnectTimeout(30000);
-        conn.setReadTimeout(60000);
+        conn.setConnectTimeout(60000);
+        conn.setReadTimeout(120000);
         conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36");
 
         int status = conn.getResponseCode();
@@ -317,6 +335,10 @@ public class InstallWizardActivity extends AppCompatActivity {
                         log("Mengunduh: " + DeviceUtils.formatFileSize(downloaded));
                     }
                 }
+            }
+
+            if (totalSize > 0 && downloaded < totalSize) {
+                throw new Exception("Unduhan terputus di tengah jalan (" + DeviceUtils.formatFileSize(downloaded) + " dari " + DeviceUtils.formatFileSize(totalSize) + "). Silakan coba lagi.");
             }
         } finally {
             conn.disconnect();
