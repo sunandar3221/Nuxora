@@ -1,136 +1,91 @@
-# AnLinux - Linux Runner untuk Android (Root & Non-Root)
+# AnLinux
 
-**AnLinux** adalah aplikasi Android berbasis **Java** dengan desain modern **Google Material You (Material 3)** yang memungkinkan Anda menjalankan berbagai distribusi Linux secara langsung di Android, baik pada perangkat yang sudah **di-root** maupun **tanpa root (non-root)**.
+**AnLinux** adalah aplikasi Android berbasis Java murni yang dirancang untuk menjalankan berbagai distribusi Linux secara mulus di perangkat Android, baik dalam mode **Non-Root (PRoot)** maupun **Root (Chroot)**, dengan antarmuka modern yang ramah pemula bergaya **Google Material You (Material 3)**.
 
 ---
 
 ## ✨ Fitur Utama
 
-### 1. Dual Mode Eksekusi: Non-Root & Root
-- **Mode Non-Root (PRoot)**:
-  - Berjalan di **semua perangkat Android** tanpa perlu unlock bootloader atau modifikasi sistem.
-  - Memanfaatkan teknologi `PRoot` untuk emulasi `chroot`, uid=0 (fake root), dan bind mount direktori Android.
-  - Otomatis mengunduh komponen binary `proot` sesuai arsitektur CPU perangkat (`arm64/aarch64`, `armhf`, `x86_64`, `x86`).
-- **Mode Root (Chroot)**:
-  - Untuk perangkat yang memiliki akses root (Magisk, KernelSU, APatch, SuperSU).
-  - Menggunakan native Linux `chroot` dengan real kernel mount (`/proc`, `/sys`, `/dev`, `/dev/pts`, `/sdcard`).
-  - Performa 100% native mendekati bare-metal tanpa overhead emulasi syscall ptrace.
-
-### 2. Dukungan Distro Lengkap & Custom Rootfs
-- **Katalog Populer Siap Pakai**:
-  - **Ubuntu 24.04 LTS (Noble Numbat)**: Ramah pemula, ekosistem paket APT terbesar.
-  - **Debian 12 (Bookworm)**: Sangat stabil, ringan, dan andal.
-  - **Kali Linux (Rolling)**: Khusus cybersecurity, penetration testing & tools forensik.
-  - **Alpine Linux 3.19**: Ukuran ekstra mini (~5MB), konsumsi RAM sangat minim.
-  - **Arch Linux**: Rolling release dengan manajer paket `pacman`.
-  - **Fedora 40**: Distro modern dengan manajer paket `dnf`.
-  - **Void Linux**: Ringan dan cepat tanpa systemd (`xbps`).
-- **Distro Kustom (Custom Rootfs)**:
-  - Input direct URL rootfs archive (`.tar.xz`, `.tar.gz`, `.tar.bz2`).
-  - Atau pilih berkas arsip lokal dari penyimpanan internal HP.
-  - Bebas menentukan shell default (`/bin/bash`, `/bin/sh`, `/bin/zsh`).
-
-### 3. Antarmuka Modern Ala Google Material You
-- Mendukung dynamic color Android 12+ (`DynamicColors.applyToActivitiesIfAvailable`).
-- Tampilan kartu elegan, chip indikator status real-time (*Berjalan* / *Berhenti*, *Root* / *Non-Root*).
-- Wizard instalasi bertahap:
-  1. Pilih Distro (Katalog / Custom)
-  2. Pilih Mode (PRoot vs Chroot)
-  3. Konfigurasi direktori & mount penyimpanan internal (`/sdcard`)
-  4. Unduh & ekstrak otomatis dengan progress bar & live log streaming.
-
-### 4. Terminal Shell Bawaan Interaktif
-- Terminal terintegrasi langsung di aplikasi tanpa ketergantungan aplikasi pihak ketiga.
-- Pewarnaan teks **ANSI Color** (folder biru, berkas hijau, peringatan kuning, dsb.).
-- **Keyboard Toolbar Khusus**:
-  - Tombol `ESC`, `TAB`, `CTRL+C`, `CTRL+D`, `▲`, `▼`, `◀`, `▶`, `|`, `/`, `~`.
-- Fitur Clear Screen, Input Command Bar, dan copy/paste.
-
-### 5. Panduan & Alat GUI Desktop (XFCE, VNC, Audio)
-- Perintah instan 1-klik untuk memasang antarmuka grafis (XFCE4 Desktop).
-- Pengaturan VNC Server (TigerVNC / TightVNC) dan tombol langsung untuk membuka aplikasi VNC Viewer.
-- Integrasi server audio (PulseAudio) agar suara dari Linux dapat diputar di speaker HP.
-- Script perbaikan DNS otomatis (`8.8.8.8` & `1.1.1.1` pada `/etc/resolv.conf`).
-
-### 6. Layanan Latar Belakang (Foreground Service & WakeLock)
-- Menjalankan distro Linux di latar belakang meskipun aplikasi diminimalkan (misalnya untuk web server, SSH server, bot Python, atau torrent).
-- Notifikasi status persisten dengan tombol pintas "Terminal" dan "Hentikan".
+- 🎨 **Desain Google Material You (Material 3)**: Tampilan modern, bersih, intuitif, ramah untuk pemula, dan mendukung Dynamic Colors.
+- 🐧 **Katalog Distro Populer**:
+  - **Ubuntu** (LTS)
+  - **Debian** (Stable)
+  - **Kali Linux** (Rolling)
+  - **Alpine Linux** (Ultra-ringan ~5MB)
+  - **Arch Linux** (Rolling)
+  - **Fedora**
+  - **openSUSE**
+- 📦 **Dukungan Custom Distro**: Pasang distro apa saja dari arsip lokal (`.tar.gz`, `.tar.xz`, `.tar.bz2`) atau direct download URL.
+- ⚡ **Dual Execution Engine**:
+  - **Mode Non-Root (PRoot)**: Berjalan tanpa memerlukan akses root di semua HP Android modern (Android 7.0 s/d Android 14+). Komponen binary PRoot dipaketkan langsung dalam APK native libraries (`jniLibs`).
+  - **Mode Root (Chroot)**: Memanfaatkan kernel Android secara langsung untuk performa maksimal (mendukung Magisk dan KernelSU) dengan auto-mount & auto-clean unmount.
+- 💻 **Terminal Interaktif Ala Termux (True PTY)**:
+  - Mengintegrasikan engine emulator terminal resmi dari **Termux** (`TerminalView` & `TerminalSession` via `libtermux.so` PTY).
+  - Dukungan penuh aplikasi terminal interaktif CLI seperti `nano`, `vim`, `htop`, `top`, `tmux`, `less`, dan auto-completion Tab di Bash/Zsh.
+  - **Pinch-to-Zoom**: Cubit layar untuk memperbesar atau memperkecil ukuran font terminal secara halus (8sp - 34sp).
+  - **Extra Keys Toolbar**: Tombol bantu keyboard ala Termux (`ESC`, `TAB`, `CTRL`, `ALT`, `▲`, `▼`, `◀`, `▶`, `Ctrl+C`, `Ctrl+D`, `/`, `-`, `|`, `~`).
+  - Tombol pintas toggle keyboard on-screen di bar navigasi atas.
+- 🚀 **Auto-Setup Paket Penting**:
+  - Otomatis menyediakan DNS Google & Cloudflare (`/etc/resolv.conf`).
+  - Opsi pasang paket penting otomatis (`nano`, `curl`, `wget`, `bash`, `sudo`) saat pertama kali meluncurkan terminal.
+- 🔒 **100% Offline & Mandiri**: Komponen biner PRoot dan terminal terintegrasi langsung di dalam aplikasi.
 
 ---
 
-## 📁 Struktur Proyek
+## 📱 Arsitektur CPU yang Didukung
 
-```
-AnLinux/
-├── app/
-│   ├── build.gradle                          # Konfigurasi dependensi Android & Java 17
-│   ├── src/main/
-│   │   ├── AndroidManifest.xml               # Deklarasi izin & komponen aplikasi
-│   │   ├── java/com/anlinux/app/
-│   │   │   ├── AnLinuxApplication.java       # Inisialisasi Material You dynamic colors
-│   │   │   ├── data/
-│   │   │   │   ├── model/                    # Model data: Distro, InstalledDistro, ExecutionMode
-│   │   │   │   ├── repository/               # Katalog distro built-in (Ubuntu, Debian, Kali, dll.)
-│   │   │   │   └── database/                 # SQLite helper penyimpan distro terinstall
-│   │   │   ├── core/
-│   │   │   │   ├── PRootManager.java         # Engine Non-Root: binari PRoot & launcher
-│   │   │   │   ├── ChrootManager.java        # Engine Root: su & native chroot mount
-│   │   │   │   ├── ProcessRunner.java        # Interaktif terminal I/O process runner
-│   │   │   │   ├── ExtractionHelper.java     # Dekompresi arsip tar, tar.gz, tar.xz
-│   │   │   │   └── ScriptGenerator.java      # Generator bash launch script, DNS, GUI
-│   │   │   ├── service/
-│   │   │   │   └── LinuxService.java         # Foreground Service & WakeLock
-│   │   │   ├── ui/
-│   │   │   │   ├── MainActivity.java         # Bottom navigation controller (Material 3)
-│   │   │   │   ├── distros/                  # Tab daftar distro terinstall & card adapter
-│   │   │   │   ├── catalog/                  # Tab katalog distro & card adapter
-│   │   │   │   ├── custom/                   # Dialog input distro custom (URL / File)
-│   │   │   │   ├── install/                  # Wizard instalasi bertahap & live logs
-│   │   │   │   ├── terminal/                 # Terminal shell & special key toolbar
-│   │   │   │   ├── tools/                    # Tab alat GUI, XFCE, VNC, PulseAudio
-│   │   │   │   └── settings/                 # Tab arsitektur, cek root, preferensi
-│   │   │   └── utils/
-│   │   │       ├── DeviceUtils.java          # Deteksi CPU arch (aarch64, armhf, x86) & Root
-│   │   │       └── AnsiColorParser.java      # Konversi ANSI terminal color ke Android Spans
-│   │   └── res/                              # Layout, XML, themes Material 3, Vector drawable
-├── build.gradle                              # Root build gradle
-├── settings.gradle                           # Konfigurasi modul & repositori
-└── gradle.properties
-```
+Aplikasi mendukung 4 arsitektur prosesor utama:
+* `arm64-v8a` (AArch64 - 64-bit Android modern)
+* `armeabi-v7a` (ARM 32-bit)
+* `x86_64` (Emulator Android 64-bit / Intel Chromebook)
+* `x86` (Emulator Android 32-bit)
 
 ---
 
-## 🚀 Cara Menjalankan & Build
+## 🛠️ Kompilasi dari Source
 
-### Melalui Android Studio:
-1. Buka **Android Studio**.
-2. Pilih **Open** lalu arahkan ke direktori `/home/wellkops/AnLinux`.
-3. Tunggu proses *Gradle Sync* selesai.
-4. Hubungkan HP Android atau jalankan Emulator.
-5. Klik tombol **Run** (Shift + F10).
+### Prasyarat:
+* JDK 17 (OpenJDK 17)
+* Android SDK Platform 34 & Build-Tools 34.0.0
+* Gradle 8.7
 
-### Melalui Baris Perintah (CLI):
+### Perintah Build:
 ```bash
-cd /home/wellkops/AnLinux
+git clone https://github.com/wellkops/AnLinux.git
+cd AnLinux
 ./gradlew assembleDebug
 ```
-Berkas APK akan dihasilkan di:
-`app/build/outputs/apk/debug/app-debug.apk`
+File APK hasil build akan berada di `app/build/outputs/apk/debug/app-debug.apk`.
 
 ---
 
-## 💡 Panduan Singkat Penggunaan
+## 📥 Unduh APK
 
-1. **Memasang Distro Pertama**:
-   - Buka tab **Katalog**.
-   - Pilih distro yang diinginkan (misal **Ubuntu 24.04**).
-   - Pada wizard, pilih **Non-Root (PRoot)** jika HP standar, atau **Mode Root** jika HP sudah di-root.
-   - Klik **Mulai Unduh & Pasang**.
-   - Setelah selesai, tekan **Buka Terminal**.
+Unduh versi rilis `.apk` terbaru langsung dari halaman [Releases](https://github.com/wellkops/AnLinux/releases).
 
-2. **Menjalankan Tampilan Grafis (Desktop XFCE & VNC)**:
-   - Buka tab **Alat & GUI**.
-   - Tekan **Salin Perintah** pada kartu *Pasang Desktop XFCE4*.
-   - Buka terminal distro Anda dan paste perintah tersebut.
-   - Setelah selesai, jalankan perintah *VNC Server*.
-   - Buka aplikasi **VNC Viewer**, masukkan alamat `127.0.0.1:5901` dan password yang Anda buat.
+Pasang via terminal ADB:
+```bash
+adb install -r AnLinux-v1.0.0.apk
+```
+
+---
+
+## 🤝 Ucapan Terima Kasih & Kredit (Credits)
+
+Proyek ini dibangun dengan memanfaatkan dan menghormati kontribusi luar biasa dari komunitas open source:
+
+1. **[Termux](https://github.com/termux/termux-app)**:
+   - Komponen `terminal-view` dan `terminal-emulator` (dilisensikan di bawah GPLv3) yang menjadi motor utama tampilan dan emulasi pseudo-terminal (PTY) interaktif aplikasi ini.
+2. **[PRoot](https://proot-me.github.io/)**:
+   - Emulator `chroot`, `mount --bind`, dan virtualisasi root (UID 0) di user-space Android tanpa hak akses root.
+3. **[EXALAB AnLinux-Resources](https://github.com/EXALAB/Anlinux-Resources)**:
+   - Referensi skrip dan arsip image RootFS distribusi Linux.
+4. **[Alpine Linux](https://alpinelinux.org/)**:
+   - Penyedia image Minirootfs ultra-ringan berbasis musl libc & busybox.
+
+---
+
+## 📄 Lisensi (License)
+
+Proyek ini dilisensikan di bawah **GNU General Public License v3.0 (GPLv3)**.  
+Lihat berkas [LICENSE](LICENSE) untuk informasi lebih detail.
