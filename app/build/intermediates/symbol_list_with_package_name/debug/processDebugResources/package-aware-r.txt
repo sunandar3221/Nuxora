@@ -3042,6 +3042,7 @@ drawable ic_clear_black_24
 drawable ic_clock_black_24dp
 drawable ic_delete
 drawable ic_distro_generic
+drawable ic_keyboard
 drawable ic_keyboard_black_24dp
 drawable ic_launcher_linux
 drawable ic_m3_chip_check
@@ -3135,6 +3136,8 @@ drawable notification_template_icon_low_bg
 drawable notification_tile_bg
 drawable notify_panel_notification_icon_bg
 drawable test_level_drawable
+drawable text_select_handle_left_material
+drawable text_select_handle_right_material
 drawable tooltip_frame_dark
 drawable tooltip_frame_light
 id ALT
@@ -3252,7 +3255,7 @@ id btnOpenTerminal
 id btnOpenVncApp
 id btnPickFile
 id btnStartStop
-id btnTerminalSend
+id btnToggleKeyboard
 id buttonPanel
 id cache_measures
 id callMeasure
@@ -3352,7 +3355,6 @@ id etCustomName
 id etCustomShell
 id etCustomUrl
 id etDistroName
-id etTerminalInput
 id exitUntilCollapsed
 id expand_activities_button
 id expanded_menu
@@ -3408,11 +3410,14 @@ id italic
 id item_touch_helper_previous_elevation
 id jumpToEnd
 id jumpToStart
+id keyAlt
+id keyCtrl
 id keyCtrlC
 id keyCtrlD
 id keyDown
 id keyEsc
 id keyLeft
+id keyMinus
 id keyPipe
 id keyRight
 id keySlash
@@ -3644,7 +3649,7 @@ id tag_transition_group
 id tag_unhandled_key_event_manager
 id tag_unhandled_key_listeners
 id tag_window_insets_animation_callback
-id terminalScrollView
+id terminalView
 id text
 id text2
 id textEnd
@@ -3694,7 +3699,6 @@ id tvProgressStatus
 id tvSelectedFile
 id tvSettingArch
 id tvSettingRoot
-id tvTerminalOutput
 id tvTerminalTitle
 id tvVncCmd
 id tvXfceCmd
@@ -3993,6 +3997,7 @@ string character_counter_overflowed_content_description
 string character_counter_pattern
 string clear_text_end_icon_content_description
 string command_copied
+string copy_text
 string custom_distro_desc
 string custom_distro_title
 string distro_name_label
@@ -4128,6 +4133,7 @@ string nav_tools
 string no_installed_distros_desc
 string no_installed_distros_title
 string password_toggle_content_description
+string paste_text
 string path_password_eye
 string path_password_eye_mask_strike_through
 string path_password_eye_mask_visible
@@ -4155,6 +4161,7 @@ string step_options_title
 string terminal_cleared
 string terminal_hint
 string terminal_title
+string text_selection_more
 string tool_audio_desc
 string tool_audio_title
 string tool_dns_desc

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.anlinux.app-mergeDebugResources-30:/values-v31/values-v31.xml",
+            "outputFile": "com.anlinux.app-mergeDebugResources-31:/values-v31/values-v31.xml",
             "map": [
                 {
                     "source": "/home/wellkops/.gradle/caches/transforms-4/632a061efa5188a178bae6687e255d9a/transformed/material-1.12.0/res/values-v31/values-v31.xml",

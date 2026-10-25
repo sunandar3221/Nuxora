@@ -35,6 +35,7 @@ color tertiary_container
 drawable ic_add
 drawable ic_delete
 drawable ic_distro_generic
+drawable ic_keyboard
 drawable ic_launcher_linux
 drawable ic_nav_catalog
 drawable ic_nav_distros
@@ -62,7 +63,7 @@ id btnOpenTerminal
 id btnOpenVncApp
 id btnPickFile
 id btnStartStop
-id btnTerminalSend
+id btnToggleKeyboard
 id cardModeProot
 id cardModeRoot
 id catalogDistroDesc
@@ -80,15 +81,17 @@ id etCustomName
 id etCustomShell
 id etCustomUrl
 id etDistroName
-id etTerminalInput
 id fabAddDistro
 id fragmentContainer
 id imgDistroSelected
+id keyAlt
+id keyCtrl
 id keyCtrlC
 id keyCtrlD
 id keyDown
 id keyEsc
 id keyLeft
+id keyMinus
 id keyPipe
 id keyRight
 id keySlash
@@ -108,7 +111,7 @@ id recyclerViewDistros
 id scrollLogs
 id switchMountSdcard
 id switchWakeLock
-id terminalScrollView
+id terminalView
 id tilCustomName
 id tilCustomShell
 id tilCustomUrl
@@ -123,7 +126,6 @@ id tvProgressStatus
 id tvSelectedFile
 id tvSettingArch
 id tvSettingRoot
-id tvTerminalOutput
 id tvTerminalTitle
 id tvVncCmd
 id tvXfceCmd

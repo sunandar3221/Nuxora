@@ -28,52 +28,88 @@ public class PRootManager {
         this.prootBin = new File(binDir, "proot");
     }
 
-    public File getProotBin() {
-        return prootBin;
-    }
-
     public File getBinDir() {
         return binDir;
     }
 
+    /**
+     * Resolves the executable PRoot binary.
+     * On Android 10+ (API 29+), binaries in nativeLibraryDir (libproot.so) have execute (r-xp)
+     * permissions guaranteed by Android SELinux.
+     */
+    public File getProotExecutable() {
+        String nativeDir = context.getApplicationInfo().nativeLibraryDir;
+        if (nativeDir != null) {
+            File prootSo = new File(nativeDir, "libproot.so");
+            if (prootSo.exists()) {
+                return prootSo;
+            }
+        }
+        return prootBin;
+    }
+
+    public File getLoaderExecutable() {
+        String nativeDir = context.getApplicationInfo().nativeLibraryDir;
+        if (nativeDir != null) {
+            File loaderSo = new File(nativeDir, "libloader.so");
+            if (loaderSo.exists()) {
+                return loaderSo;
+            }
+        }
+        return new File(binDir, "loader");
+    }
+
+    public String getLibraryPath() {
+        String nativeDir = context.getApplicationInfo().nativeLibraryDir;
+        if (nativeDir != null && new File(nativeDir).exists()) {
+            return nativeDir + ":" + binDir.getAbsolutePath();
+        }
+        return binDir.getAbsolutePath();
+    }
+
     public boolean isProotInstalled() {
+        File prootExe = getProotExecutable();
+        if (prootExe.exists()) {
+            return true;
+        }
         File loader = new File(binDir, "loader");
         File talloc = new File(binDir, "libtalloc.so.2");
-        return prootBin.exists() && prootBin.canExecute() && loader.exists() && talloc.exists();
+        return prootBin.exists() && loader.exists();
     }
 
     /**
-     * Extracts bundled PRoot binaries and libraries from APK assets to internal storage.
-     * Guaranteed 100% offline and no 404 error!
+     * Ensures all PRoot support binaries and libraries are ready.
+     * Extracts from assets as fallback and sets executable permissions with chmod.
      */
     public void ensureProotBinary(ExtractionHelper.ProgressListener progressListener) throws Exception {
-        if (isProotInstalled()) {
-            return;
-        }
-
         String archDir = resolveAssetArchDir();
+
         if (progressListener != null) {
-            progressListener.onProgress("Menyiapkan komponen PRoot (" + archDir + ")…", 1);
+            progressListener.onProgress("Menyiapkan komponen PRoot…", 1);
         }
 
         AssetManager assets = context.getAssets();
         String[] files = {"proot", "loader", "libtalloc.so.2"};
 
         for (String fileName : files) {
-            String assetPath = "bin/" + archDir + "/" + fileName;
             File targetFile = new File(binDir, fileName);
-
-            try (InputStream in = assets.open(assetPath);
-                 OutputStream out = new FileOutputStream(targetFile)) {
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, read);
+            if (!targetFile.exists() || targetFile.length() == 0) {
+                String assetPath = "bin/" + archDir + "/" + fileName;
+                try (InputStream in = assets.open(assetPath);
+                     OutputStream out = new FileOutputStream(targetFile)) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, read);
+                    }
                 }
             }
 
-            targetFile.setExecutable(true, false);
-            targetFile.setReadable(true, false);
+            try {
+                targetFile.setExecutable(true, false);
+                targetFile.setReadable(true, false);
+                Runtime.getRuntime().exec(new String[]{"chmod", "755", targetFile.getAbsolutePath()}).waitFor();
+            } catch (Exception ignored) {}
         }
     }
 
@@ -84,7 +120,7 @@ public class PRootManager {
             if (abi.equalsIgnoreCase("x86_64")) return "x86_64";
             if (abi.startsWith("x86")) return "x86";
         }
-        return "arm64-v8a"; // Default fallback
+        return "arm64-v8a";
     }
 
     /**
@@ -92,7 +128,7 @@ public class PRootManager {
      */
     public String[] buildCommand(InstalledDistro distro) throws IOException {
         File rootfsDir = new File(distro.getRootfsPath());
-        File script = ScriptGenerator.createProotLaunchScript(binDir, rootfsDir, distro);
+        File script = ScriptGenerator.createProotLaunchScript(this, rootfsDir, distro);
         return new String[]{"/system/bin/sh", script.getAbsolutePath()};
     }
 }

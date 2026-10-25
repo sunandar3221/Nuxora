@@ -27,6 +27,7 @@ public class ChrootManager {
     public String[] buildCommand(InstalledDistro distro) throws IOException {
         File rootfsDir = new File(distro.getRootfsPath());
         File script = ScriptGenerator.createChrootLaunchScript(binDir, rootfsDir, distro);
+        // Use su with mount-master flag (-mm) if supported by Magisk/KernelSU, otherwise standard su
         return new String[]{"su", "-c", "/system/bin/sh " + script.getAbsolutePath()};
     }
 

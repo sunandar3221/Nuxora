@@ -29,6 +29,11 @@ android {
     buildFeatures {
         viewBinding true
     }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
@@ -45,6 +50,10 @@ dependencies {
     // Archive decompression (tar, gzip, bzip2, xz)
     implementation 'org.apache.commons:commons-compress:1.26.1'
     implementation 'org.tukaani:xz:1.9'
+
+    // Termux Terminal View & Emulator (PTY support for nano, vim, top, etc.)
+    implementation 'com.github.termux.termux-app:terminal-view:v0.118.0'
+    implementation 'com.github.termux.termux-app:terminal-emulator:v0.118.0'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

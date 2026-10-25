@@ -5,9 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,6 +13,7 @@ import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.anlinux.app.R;
 import com.google.android.material.button.MaterialButton;
+import com.termux.view.TerminalView;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
@@ -30,10 +29,13 @@ public final class ActivityTerminalBinding implements ViewBinding {
   public final MaterialButton btnCloseTerminal;
 
   @NonNull
-  public final MaterialButton btnTerminalSend;
+  public final MaterialButton btnToggleKeyboard;
 
   @NonNull
-  public final EditText etTerminalInput;
+  public final Button keyAlt;
+
+  @NonNull
+  public final Button keyCtrl;
 
   @NonNull
   public final Button keyCtrlC;
@@ -49,6 +51,9 @@ public final class ActivityTerminalBinding implements ViewBinding {
 
   @NonNull
   public final Button keyLeft;
+
+  @NonNull
+  public final Button keyMinus;
 
   @NonNull
   public final Button keyPipe;
@@ -69,40 +74,38 @@ public final class ActivityTerminalBinding implements ViewBinding {
   public final Button keyUp;
 
   @NonNull
-  public final ScrollView terminalScrollView;
-
-  @NonNull
-  public final TextView tvTerminalOutput;
+  public final TerminalView terminalView;
 
   @NonNull
   public final TextView tvTerminalTitle;
 
   private ActivityTerminalBinding(@NonNull LinearLayout rootView,
       @NonNull MaterialButton btnClearTerminal, @NonNull MaterialButton btnCloseTerminal,
-      @NonNull MaterialButton btnTerminalSend, @NonNull EditText etTerminalInput,
+      @NonNull MaterialButton btnToggleKeyboard, @NonNull Button keyAlt, @NonNull Button keyCtrl,
       @NonNull Button keyCtrlC, @NonNull Button keyCtrlD, @NonNull Button keyDown,
-      @NonNull Button keyEsc, @NonNull Button keyLeft, @NonNull Button keyPipe,
-      @NonNull Button keyRight, @NonNull Button keySlash, @NonNull Button keyTab,
-      @NonNull Button keyTilde, @NonNull Button keyUp, @NonNull ScrollView terminalScrollView,
-      @NonNull TextView tvTerminalOutput, @NonNull TextView tvTerminalTitle) {
+      @NonNull Button keyEsc, @NonNull Button keyLeft, @NonNull Button keyMinus,
+      @NonNull Button keyPipe, @NonNull Button keyRight, @NonNull Button keySlash,
+      @NonNull Button keyTab, @NonNull Button keyTilde, @NonNull Button keyUp,
+      @NonNull TerminalView terminalView, @NonNull TextView tvTerminalTitle) {
     this.rootView = rootView;
     this.btnClearTerminal = btnClearTerminal;
     this.btnCloseTerminal = btnCloseTerminal;
-    this.btnTerminalSend = btnTerminalSend;
-    this.etTerminalInput = etTerminalInput;
+    this.btnToggleKeyboard = btnToggleKeyboard;
+    this.keyAlt = keyAlt;
+    this.keyCtrl = keyCtrl;
     this.keyCtrlC = keyCtrlC;
     this.keyCtrlD = keyCtrlD;
     this.keyDown = keyDown;
     this.keyEsc = keyEsc;
     this.keyLeft = keyLeft;
+    this.keyMinus = keyMinus;
     this.keyPipe = keyPipe;
     this.keyRight = keyRight;
     this.keySlash = keySlash;
     this.keyTab = keyTab;
     this.keyTilde = keyTilde;
     this.keyUp = keyUp;
-    this.terminalScrollView = terminalScrollView;
-    this.tvTerminalOutput = tvTerminalOutput;
+    this.terminalView = terminalView;
     this.tvTerminalTitle = tvTerminalTitle;
   }
 
@@ -145,15 +148,21 @@ public final class ActivityTerminalBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.btnTerminalSend;
-      MaterialButton btnTerminalSend = ViewBindings.findChildViewById(rootView, id);
-      if (btnTerminalSend == null) {
+      id = R.id.btnToggleKeyboard;
+      MaterialButton btnToggleKeyboard = ViewBindings.findChildViewById(rootView, id);
+      if (btnToggleKeyboard == null) {
         break missingId;
       }
 
-      id = R.id.etTerminalInput;
-      EditText etTerminalInput = ViewBindings.findChildViewById(rootView, id);
-      if (etTerminalInput == null) {
+      id = R.id.keyAlt;
+      Button keyAlt = ViewBindings.findChildViewById(rootView, id);
+      if (keyAlt == null) {
+        break missingId;
+      }
+
+      id = R.id.keyCtrl;
+      Button keyCtrl = ViewBindings.findChildViewById(rootView, id);
+      if (keyCtrl == null) {
         break missingId;
       }
 
@@ -184,6 +193,12 @@ public final class ActivityTerminalBinding implements ViewBinding {
       id = R.id.keyLeft;
       Button keyLeft = ViewBindings.findChildViewById(rootView, id);
       if (keyLeft == null) {
+        break missingId;
+      }
+
+      id = R.id.keyMinus;
+      Button keyMinus = ViewBindings.findChildViewById(rootView, id);
+      if (keyMinus == null) {
         break missingId;
       }
 
@@ -223,15 +238,9 @@ public final class ActivityTerminalBinding implements ViewBinding {
         break missingId;
       }
 
-      id = R.id.terminalScrollView;
-      ScrollView terminalScrollView = ViewBindings.findChildViewById(rootView, id);
-      if (terminalScrollView == null) {
-        break missingId;
-      }
-
-      id = R.id.tvTerminalOutput;
-      TextView tvTerminalOutput = ViewBindings.findChildViewById(rootView, id);
-      if (tvTerminalOutput == null) {
+      id = R.id.terminalView;
+      TerminalView terminalView = ViewBindings.findChildViewById(rootView, id);
+      if (terminalView == null) {
         break missingId;
       }
 
@@ -242,9 +251,9 @@ public final class ActivityTerminalBinding implements ViewBinding {
       }
 
       return new ActivityTerminalBinding((LinearLayout) rootView, btnClearTerminal,
-          btnCloseTerminal, btnTerminalSend, etTerminalInput, keyCtrlC, keyCtrlD, keyDown, keyEsc,
-          keyLeft, keyPipe, keyRight, keySlash, keyTab, keyTilde, keyUp, terminalScrollView,
-          tvTerminalOutput, tvTerminalTitle);
+          btnCloseTerminal, btnToggleKeyboard, keyAlt, keyCtrl, keyCtrlC, keyCtrlD, keyDown, keyEsc,
+          keyLeft, keyMinus, keyPipe, keyRight, keySlash, keyTab, keyTilde, keyUp, terminalView,
+          tvTerminalTitle);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

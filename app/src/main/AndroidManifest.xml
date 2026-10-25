@@ -19,6 +19,7 @@
         android:roundIcon="@drawable/ic_launcher_linux"
         android:supportsRtl="true"
         android:theme="@style/Theme.AnLinux"
+        android:extractNativeLibs="true"
         android:requestLegacyExternalStorage="true"
         tools:targetApi="34">
 

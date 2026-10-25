@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.anlinux.app-mergeDebugResources-30:/values-w600dp-land-v13/values-w600dp-land-v13.xml",
+            "outputFile": "com.anlinux.app-mergeDebugResources-31:/values-w600dp-land-v13/values-w600dp-land-v13.xml",
             "map": [
                 {
                     "source": "/home/wellkops/.gradle/caches/transforms-4/632a061efa5188a178bae6687e255d9a/transformed/material-1.12.0/res/values-w600dp-land-v13/values-w600dp-land-v13.xml",
