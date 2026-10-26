@@ -1,100 +1,69 @@
+<div align="center">
+
 # Nuxora
 
-**Nuxora** adalah aplikasi Android open-source berbasis Java murni yang dirancang untuk menjalankan berbagai distribusi Linux secara mulus di perangkat Android, baik dalam mode **Non-Root (PRoot)** maupun **Root (Chroot)**, dengan antarmuka modern yang ramah pemula bergaya **Google Material You (Material 3)**.
+### Run Linux on Android — Seamlessly, Privately, and Without Root
+
+[![Latest Release](https://img.shields.io/github/v/release/wellkops/Nuxora?color=blue&label=Latest%20Version)](https://github.com/wellkops/Nuxora/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B-green.svg)](https://github.com/wellkops/Nuxora)
+[![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20ARMv7%20%7C%20x86__64-orange.svg)](https://github.com/wellkops/Nuxora)
+
+[**Download APK (v1.3.0)**](https://github.com/wellkops/Nuxora/releases/download/v1.3.0/Nuxora-v1.3.0.apk) • [**Semua Rilis**](https://github.com/wellkops/Nuxora/releases)
+
+---
+
+</div>
+
+## 📖 Tentang Nuxora
+
+**Nuxora** adalah aplikasi Android canggih yang memungkinkan Anda menginstal dan menjalankan distribusi Linux lengkap (Ubuntu, Debian, Kali Linux, Alpine Linux, Arch Linux, Fedora, dan lainnya) langsung di perangkat Android Anda tanpa memerlukan akses **ROOT**.
+
+Mulai dari versi **v1.3.0**, Nuxora beralih ke arsitektur **Closed Source & Decoupled Container**:
+- File paket APK dibuat bersih, ringan, dan mandiri tanpa membundel binary sistem pihak ketiga.
+- Komponen backend (PRoot & Rootfs) diunduh secara dinamis saat instalasi distro pertama kali.
+- Terminal bawaan berbasis emulator Termux berkinerja tinggi dengan dukungan penuh aplikasi CLI (nano, vim, bash, top, neofetch, gcc, python, nodejs).
 
 ---
 
 ## ✨ Fitur Utama
 
-- 🎨 **Desain Google Material You (Material 3)**: Tampilan modern, bersih, intuitif, ramah untuk pemula, dan mendukung Dynamic Colors.
-- 🐧 **Katalog Distro Populer Siap Pakai**:
-  - **Ubuntu** (LTS)
-  - **Debian** (Stable)
-  - **Kali Linux** (Rolling)
-  - **Alpine Linux** (Ultra-ringan ~5MB)
-  - **Arch Linux** (Rolling)
-  - **Fedora**
-  - **openSUSE**
-- 📦 **Dukungan Custom Distro**: Pasang distro apa saja dari arsip lokal (`.tar.gz`, `.tar.xz`, `.tar.bz2`) atau direct download URL.
-- ⚡ **Dual Execution Engine**:
-  - **Mode Non-Root (PRoot)**: Berjalan tanpa memerlukan akses root di semua HP Android modern (Android 7.0 s/d Android 14+). Komponen binary PRoot dipaketkan langsung dalam APK native libraries (`jniLibs`).
-  - **Mode Root (Chroot)**: Memanfaatkan kernel Android secara langsung untuk performa maksimal (mendukung Magisk dan KernelSU) dengan auto-mount & auto-clean unmount.
-- 🔧 **Perbaikan Package Manager Lengkap (Anti-Error Dpkg/APT)**:
-  - Otomatis mengatasi error `dpkg` dan `apt update/upgrade` di semua merk ponsel (MIUI/HyperOS, Samsung OneUI, ColorOS, dll.).
-  - Bypass seccomp restrictions (`PROOT_NO_SECCOMP=1`).
-  - DPKG `force-unsafe-io` untuk mencegah freeze & fsync error pada storage Android.
-  - Patch APT Sandbox User (`APT::Sandbox::User "root"`) & injeksi Android `AID_INET` (GID 3003) agar paket download tidak ditolak kernel.
-  - Implementasi `/usr/sbin/policy-rc.d` (`exit 101`) agar instalasi daemon tidak gagal pada post-installation dpkg.
-- 🔔 **Layanan Foreground & Notifikasi Aktif**:
-  - **Sesi Terminal Tidak Mati**: Saat terminal dibuka, Foreground Service berjalan dengan notifikasi permanen ("Nuxora - Sesi Terminal Aktif") dan WakeLock CPU sehingga proses Linux tetap berjalan lancar saat Anda beralih aplikasi atau layar dimatikan.
-  - **Progress Bar Notifikasi Instalasi**: Pengunduhan dan ekstraksi distro dipantau langsung di bar notifikasi dengan progress bar real-time tanpa risiko proses dimatikan oleh sistem Android.
-- 💻 **Terminal Interaktif Ala Termux (True PTY)**:
-  - Mengintegrasikan engine emulator terminal resmi dari **Termux** (`TerminalView` & `TerminalSession` via `libtermux.so` PTY).
-  - Dukungan penuh aplikasi terminal interaktif CLI seperti `nano`, `vim`, `htop`, `top`, `tmux`, `less`, dan auto-completion Tab di Bash/Zsh.
-  - **Pinch-to-Zoom**: Cubit layar untuk memperbesar atau memperkecil ukuran font terminal secara halus (8sp - 34sp).
-  - **Extra Keys Toolbar**: Tombol bantu keyboard ala Termux (`ESC`, `TAB`, `CTRL`, `ALT`, `▲`, `▼`, `◀`, `▶`, `Ctrl+C`, `Ctrl+D`, `/`, `-`, `|`, `~`).
-  - Tombol pintas toggle keyboard on-screen di bar navigasi atas.
-- 🚀 **Auto-Setup Paket Penting**:
-  - Otomatis menyediakan DNS Google & Cloudflare (`/etc/resolv.conf`).
-  - Opsi pasang paket penting otomatis (`nano`, `curl`, `wget`, `bash`, `sudo`) saat pertama kali meluncurkan terminal.
-- 🔒 **100% Offline & Mandiri**: Komponen biner PRoot dan terminal terintegrasi langsung di dalam aplikasi.
+- 🚀 **Tanpa Akses Root (PRoot)**: Jalankan distro Linux di Android 7.0 hingga Android 14+ dengan hak akses root tersimulasi secara penuh.
+- ⚡ **Dukungan Root Mode (Chroot)**: Untuk perangkat yang sudah di-root, tersedia mode Chroot native berkecepatan tinggi.
+- 🖥️ **Terminal Ala Termux**:
+  - Dukungan Pinch-to-Zoom (ubah ukuran teks terminal dengan cubitan jari).
+  - Tombol keyboard tambahan (ESC, TAB, CTRL, ALT, Tombol Panah).
+  - PTY native untuk menjalankan editor dan aplikasi CLI interaktif tanpa glitch.
+- 🔔 **Background Service & Notifikasi**: Sesi terminal dan proses instalasi tetap berjalan di latar belakang tanpa terbunuh oleh sistem Android.
+- 🛠️ **Distro Support Luas**: Ubuntu, Debian, Alpine Linux, Kali Linux, Arch Linux, Fedora, Void Linux, dan Manjaro.
+- 🌐 **Fix Package Manager Otomatis**: Dilengkapi konfigurasi otomatis untuk apt, dpkg, dan apk guna mengatasi error `dpkg unsafe-io`, `fchdir`, dan `Function not implemented`.
 
 ---
 
-## 📱 Arsitektur CPU yang Didukung
+## 📥 Unduh & Instalasi
 
-Aplikasi mendukung 4 arsitektur prosesor utama:
-* `arm64-v8a` (AArch64 - 64-bit Android modern)
-* `armeabi-v7a` (ARM 32-bit)
-* `x86_64` (Emulator Android 64-bit / Intel Chromebook)
-* `x86` (Emulator Android 32-bit)
+Unduh rilis APK terbaru langsung melalui tautan di bawah:
 
----
+| Berkas | Versi | Deskripsi | Tautan Unduh |
+| :--- | :--- | :--- | :--- |
+| **Nuxora-v1.3.0.apk** | `1.3.0` | Versi Closed Source terbaru (Decoupled, Anti-GPL bundling) | [Download](https://github.com/wellkops/Nuxora/releases/download/v1.3.0/Nuxora-v1.3.0.apk) |
+| **Nuxora-v1.0.0.apk** | `1.0.0` (v1.3.0 Core) | Standalone release build | [Download](https://github.com/wellkops/Nuxora/releases/download/v1.3.0/Nuxora-v1.0.0.apk) |
 
-## 🛠️ Kompilasi dari Source
-
-### Prasyarat:
-* JDK 17 (OpenJDK 17)
-* Android SDK Platform 34 & Build-Tools 34.0.0
-* Gradle 8.7
-
-### Perintah Build:
-```bash
-git clone https://github.com/wellkops/Nuxora.git
-cd Nuxora
-./gradlew assembleDebug
-```
-File APK hasil build akan berada di `app/build/outputs/apk/debug/app-debug.apk`.
+### Cara Pasang:
+1. Unduh file `.apk` di atas.
+2. Buka berkas APK di HP Android Anda dan izinkan instalasi dari sumber tidak dikenal (*Unknown Sources*).
+3. Buka **Nuxora**, pilih distro favorit Anda (misalnya Ubuntu atau Alpine), lalu klik **Pasang Distro**.
+4. Komponen backend akan disiapkan secara otomatis dan terminal siap digunakan!
 
 ---
 
-## 📥 Unduh APK
+## 🛡️ Lisensi & Keterangan Hak Cipta
 
-Unduh versi rilis `.apk` terbaru langsung dari halaman [Releases](https://github.com/wellkops/Nuxora/releases).
-
-Pasang via terminal ADB:
-```bash
-adb install -r Nuxora-v1.0.0.apk
-```
+- **Aplikasi Utama Nuxora**: Hak Cipta © Nuxora Team. Seluruh kode aplikasi Android, antarmuka, dan layanan latar belakang berlisensi **Proprietary / Closed Source**.
+- **Terminal View & Emulator Engine**: Berlisensi di bawah **Apache License 2.0** (Kredit: Termux Project).
+- **Backend Emulation (PRoot)**: Komponen emulasi diunduh secara independen pada saat runtime di bawah ketentuan lisensi **GNU General Public License v2 (GPL-2.0)**. Komponen source code PRoot upstream dapat diakses secara publik sesuai ketentuan GPL.
 
 ---
 
-## 🤝 Ucapan Terima Kasih & Kredit (Credits)
-
-Proyek ini dibangun dengan memanfaatkan dan menghormati kontribusi luar biasa dari komunitas open source:
-
-1. **[Termux](https://github.com/termux/termux-app)**:
-   - Komponen `terminal-view` dan `terminal-emulator` (dilisensikan di bawah GPLv3) yang menjadi motor utama tampilan dan emulasi pseudo-terminal (PTY) interaktif aplikasi ini.
-2. **[PRoot](https://proot-me.github.io/)**:
-   - Emulator `chroot`, `mount --bind`, dan virtualisasi root (UID 0) di user-space Android tanpa hak akses root.
-3. **[EXALAB AnLinux-Resources](https://github.com/EXALAB/Anlinux-Resources)**:
-   - Referensi skrip dan arsip image RootFS distribusi Linux.
-4. **[Alpine Linux](https://alpinelinux.org/)**:
-   - Penyedia image Minirootfs ultra-ringan berbasis musl libc & busybox.
-
----
-
-## 📄 Lisensi (License)
-
-Proyek ini dilisensikan di bawah **GNU General Public License v3.0 (GPLv3)**.  
-Lihat berkas [LICENSE](LICENSE) untuk informasi lebih detail.
+<div align="center">
+<sub>Dikembangkan dengan ❤️ untuk komunitas Linux & Android.</sub>
+</div>
