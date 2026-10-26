@@ -2,6 +2,7 @@ package com.nuxora.app.ui.settings;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,8 +16,12 @@ import androidx.fragment.app.Fragment;
 
 import com.nuxora.app.R;
 import com.nuxora.app.utils.DeviceUtils;
+import com.nuxora.app.utils.ShizukuHelper;
+import com.nuxora.app.utils.StoragePermissionHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.materialswitch.MaterialSwitch;
+
+import rikka.shizuku.Shizuku;
 
 import java.io.File;
 
@@ -24,6 +29,21 @@ public class SettingsFragment extends Fragment {
 
     public static final String PREFS_NAME = "nuxora_prefs";
     public static final String PREF_WAKELOCK = "pref_wakelock";
+
+    private TextView tvStorageStatus;
+    private MaterialButton btnRequestStorage;
+    private TextView tvShizukuStatus;
+    private MaterialButton btnPairShizuku;
+    private MaterialButton btnGrantStorageShizuku;
+
+    private final Shizuku.OnRequestPermissionResultListener shizukuPermissionListener =
+            (requestCode, grantResult) -> {
+                if (requestCode == ShizukuHelper.SHIZUKU_PERMISSION_REQUEST_CODE) {
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(this::updateShizukuStatus);
+                    }
+                }
+            };
 
     @Nullable
     @Override
@@ -34,6 +54,13 @@ public class SettingsFragment extends Fragment {
         TextView tvSettingRoot = view.findViewById(R.id.tvSettingRoot);
         MaterialSwitch switchWakeLock = view.findViewById(R.id.switchWakeLock);
         MaterialButton btnClearCache = view.findViewById(R.id.btnClearCache);
+
+        tvStorageStatus = view.findViewById(R.id.tvStorageStatus);
+        btnRequestStorage = view.findViewById(R.id.btnRequestStorage);
+
+        tvShizukuStatus = view.findViewById(R.id.tvShizukuStatus);
+        btnPairShizuku = view.findViewById(R.id.btnPairShizuku);
+        btnGrantStorageShizuku = view.findViewById(R.id.btnGrantStorageShizuku);
 
         String arch = DeviceUtils.getNormalizedArch();
         tvSettingArch.setText(getString(R.string.setting_device_arch, arch));
@@ -55,7 +82,94 @@ public class SettingsFragment extends Fragment {
             Toast.makeText(requireContext(), "Berkas sementara berhasil dibersihkan.", Toast.LENGTH_SHORT).show();
         });
 
+        btnRequestStorage.setOnClickListener(v -> {
+            StoragePermissionHelper.requestStoragePermission(requireActivity());
+        });
+
+        btnPairShizuku.setOnClickListener(v -> {
+            if (!ShizukuHelper.isShizukuInstalledAndRunning()) {
+                Toast.makeText(requireContext(), "Layanan Shizuku tidak aktif atau belum terpasang di perangkat.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            ShizukuHelper.requestShizukuPermission();
+        });
+
+        btnGrantStorageShizuku.setOnClickListener(v -> {
+            if (!ShizukuHelper.hasShizukuPermission()) {
+                Toast.makeText(requireContext(), "Izin Shizuku belum diberikan. Silakan hubungkan Shizuku terlebih dahulu.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            boolean success = ShizukuHelper.grantStoragePermissionsViaShizuku(requireContext());
+            if (success) {
+                Toast.makeText(requireContext(), "Berhasil memberikan izin akses penyimpanan via Shizuku!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(requireContext(), "Gagal menjalankan perintah Shizuku.", Toast.LENGTH_SHORT).show();
+            }
+            updateStorageStatus();
+        });
+
+        try {
+            Shizuku.addRequestPermissionResultListener(shizukuPermissionListener);
+        } catch (Throwable ignored) {}
+
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateStorageStatus();
+        updateShizukuStatus();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        try {
+            Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener);
+        } catch (Throwable ignored) {}
+    }
+
+    private void updateStorageStatus() {
+        if (!isAdded() || tvStorageStatus == null) return;
+        boolean hasPermission = StoragePermissionHelper.hasStoragePermission(requireContext());
+        if (hasPermission) {
+            tvStorageStatus.setText("Status: Akses Semua Berkas Diberikan (Penuh)");
+            tvStorageStatus.setTextColor(Color.parseColor("#10B981")); // Green
+            btnRequestStorage.setEnabled(false);
+            btnRequestStorage.setText("Izin Sudah Aktif");
+        } else {
+            tvStorageStatus.setText("Status: Belum Diberikan (Akses Terbatas)");
+            tvStorageStatus.setTextColor(Color.parseColor("#EF4444")); // Red
+            btnRequestStorage.setEnabled(true);
+            btnRequestStorage.setText("Beri Izin Penyimpanan");
+        }
+    }
+
+    private void updateShizukuStatus() {
+        if (!isAdded() || tvShizukuStatus == null) return;
+        boolean running = ShizukuHelper.isShizukuInstalledAndRunning();
+        if (!running) {
+            tvShizukuStatus.setText("Status: Shizuku Tidak Berjalan / Belum Terpasang");
+            tvShizukuStatus.setTextColor(Color.parseColor("#94A3B8"));
+            btnPairShizuku.setEnabled(true);
+            btnGrantStorageShizuku.setEnabled(false);
+        } else {
+            boolean hasPermission = ShizukuHelper.hasShizukuPermission();
+            if (hasPermission) {
+                tvShizukuStatus.setText("Status: Terhubung (Izin Shizuku Diberikan)");
+                tvShizukuStatus.setTextColor(Color.parseColor("#10B981"));
+                btnPairShizuku.setEnabled(false);
+                btnPairShizuku.setText("Terhubung");
+                btnGrantStorageShizuku.setEnabled(true);
+            } else {
+                tvShizukuStatus.setText("Status: Shizuku Aktif (Menunggu Izin)");
+                tvShizukuStatus.setTextColor(Color.parseColor("#F59E0B"));
+                btnPairShizuku.setEnabled(true);
+                btnPairShizuku.setText("Minta Izin Shizuku");
+                btnGrantStorageShizuku.setEnabled(false);
+            }
+        }
     }
 
     private void clearDirectory(File dir) {

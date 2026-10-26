@@ -101,6 +101,11 @@ public class InstallWizardActivity extends AppCompatActivity {
         cardModeRoot = findViewById(R.id.cardModeRoot);
         etDistroName = findViewById(R.id.etDistroName);
         switchMountSdcard = findViewById(R.id.switchMountSdcard);
+        switchMountSdcard.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && !com.nuxora.app.utils.StoragePermissionHelper.hasStoragePermission(this)) {
+                com.nuxora.app.utils.StoragePermissionHelper.requestStoragePermission(this);
+            }
+        });
         switchInstallExtras = findViewById(R.id.switchInstallExtras);
         progressSection = findViewById(R.id.progressSection);
         tvProgressStatus = findViewById(R.id.tvProgressStatus);

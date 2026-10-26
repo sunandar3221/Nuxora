@@ -292,6 +292,9 @@ public class ScriptGenerator {
         sb.append("mkdir -p \"$ROOTFS/tmp/.empty_selinux\"\n");
         sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" 2>/dev/null\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
+        if (distro.isMountSdcard()) {
+            sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
+        }
 
         sb.append("# Clear any stale package manager locks\n");
         sb.append("rm -f \"$ROOTFS/var/lib/dpkg/lock\"* 2>/dev/null\n");
@@ -338,8 +341,10 @@ public class ScriptGenerator {
         sb.append("  -b \"$ROOTFS/dev/shm:/dev/shm\" \\\n");
 
         if (distro.isMountSdcard()) {
-            sb.append("  -b /sdcard \\\n");
+            sb.append("  -b /storage/emulated/0:/sdcard \\\n");
+            sb.append("  -b /storage/emulated/0:/mnt/sdcard \\\n");
             sb.append("  -b /storage \\\n");
+            sb.append("  -b /sdcard \\\n");
         }
 
         sb.append("  -w /root \\\n");
@@ -388,8 +393,9 @@ public class ScriptGenerator {
         sb.append("grep -F \"$ROOTFS/dev/pts\" /proc/mounts >/dev/null 2>&1 || mount -t devpts devpts \"$ROOTFS/dev/pts\"\n");
 
         if (distro.isMountSdcard()) {
-            sb.append("mkdir -p \"$ROOTFS/sdcard\"\n");
-            sb.append("grep -F \"$ROOTFS/sdcard\" /proc/mounts >/dev/null 2>&1 || mount -o bind /sdcard \"$ROOTFS/sdcard\"\n");
+            sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
+            sb.append("grep -F \"$ROOTFS/sdcard\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage/emulated/0 \"$ROOTFS/sdcard\" 2>/dev/null || mount -o bind /sdcard \"$ROOTFS/sdcard\" 2>/dev/null\n");
+            sb.append("grep -F \"$ROOTFS/storage\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage \"$ROOTFS/storage\" 2>/dev/null\n");
         }
 
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
@@ -416,6 +422,7 @@ public class ScriptGenerator {
         sb.append("  LANG=C.UTF-8 \\\n");
         sb.append("  \"$TARGET_SHELL\" --login -i\n");
         sb.append("EXIT_CODE=$?\n");
+        sb.append("umount -l \"$ROOTFS/storage\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/sdcard\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/dev/pts\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/dev\" 2>/dev/null\n");
@@ -441,6 +448,7 @@ public class ScriptGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
+        sb.append("umount -l \"$ROOTFS/storage\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/sdcard\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/dev/pts\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/dev\" 2>/dev/null\n");

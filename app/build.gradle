@@ -10,8 +10,8 @@ android {
         applicationId "com.nuxora.app"
         minSdk 24
         targetSdk 28
-        versionCode 5
-        versionName "1.3.2"
+        versionCode 6
+        versionName "1.3.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -54,6 +54,11 @@ dependencies {
     // Termux Terminal View & Emulator (PTY support for nano, vim, top, etc.)
     implementation 'com.github.termux.termux-app:terminal-view:v0.118.0'
     implementation 'com.github.termux.termux-app:terminal-emulator:v0.118.0'
+
+    // Shizuku API for privileged file & system operations on Android 11+
+    def shizuku_version = '13.1.5'
+    implementation "dev.rikka.shizuku:api:${shizuku_version}"
+    implementation "dev.rikka.shizuku:provider:${shizuku_version}"
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

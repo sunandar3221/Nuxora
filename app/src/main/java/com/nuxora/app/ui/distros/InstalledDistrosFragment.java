@@ -94,6 +94,23 @@ public class InstalledDistrosFragment extends Fragment implements InstalledDistr
 
     @Override
     public void onOpenTerminal(InstalledDistro distro) {
+        if (distro.isMountSdcard() && !com.nuxora.app.utils.StoragePermissionHelper.hasStoragePermission(requireContext())) {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Izin Penyimpanan Dibutuhkan")
+                    .setMessage("Distro ini mengaktifkan 'Mount SD Card', tetapi izin akses penyimpanan belum diberikan. Folder /sdcard tidak dapat dibaca tanpa izin ini.")
+                    .setPositiveButton("Beri Izin", (dialog, which) -> {
+                        com.nuxora.app.utils.StoragePermissionHelper.requestStoragePermission(requireActivity());
+                    })
+                    .setNegativeButton("Buka Terminal Saja", (dialog, which) -> {
+                        openTerminalInternal(distro);
+                    })
+                    .show();
+            return;
+        }
+        openTerminalInternal(distro);
+    }
+
+    private void openTerminalInternal(InstalledDistro distro) {
         Intent intent = new Intent(requireContext(), TerminalActivity.class);
         intent.putExtra(TerminalActivity.EXTRA_DISTRO_ID, distro.getId());
         startActivity(intent);
