@@ -49,6 +49,10 @@ public class ScriptGenerator {
             if (!tmpDir.exists()) {
                 tmpDir.mkdirs();
             }
+            File emptySelinux = new File(rootfsDir, "tmp/.empty_selinux");
+            if (!emptySelinux.exists()) {
+                emptySelinux.mkdirs();
+            }
 
             // 1. DPKG unsafe-io to prevent fsync/sync and hardlink failures on Android storage
             File dpkgConfDir = new File(rootfsDir, "etc/dpkg/dpkg.cfg.d");
@@ -177,9 +181,17 @@ public class ScriptGenerator {
         if (apkBinary.exists()) {
             File apkWrapper = new File(binDir, "apk");
             String apkWrapperContent = "#!/bin/sh\n" +
-                    "if [ \"$1\" = \"add\" ]; then\n" +
-                    "    shift\n" +
-                    "    exec /sbin/apk add --no-chown \"$@\"\n" +
+                    "# Nuxora APK wrapper for Alpine PRoot compatibility\n" +
+                    "has_action=0\n" +
+                    "has_no_chown=0\n" +
+                    "for arg in \"$@\"; do\n" +
+                    "    case \"$arg\" in\n" +
+                    "        add|del|upgrade|fix) has_action=1 ;;\n" +
+                    "        --no-chown) has_no_chown=1 ;;\n" +
+                    "    esac\n" +
+                    "done\n" +
+                    "if [ \"$has_action\" -eq 1 ] && [ \"$has_no_chown\" -eq 0 ]; then\n" +
+                    "    exec /sbin/apk --no-chown \"$@\"\n" +
                     "else\n" +
                     "    exec /sbin/apk \"$@\"\n" +
                     "fi\n";
@@ -194,7 +206,6 @@ public class ScriptGenerator {
         try (FileOutputStream fos = new FileOutputStream(rootExtras)) {
             fos.write(content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException ignored) {}
-        rootExtras.setExecutable(true, false);
         rootExtras.setExecutable(true, false);
 
         // Create /etc/profile.d/00-linuxdroid.sh for prompt and first-run
@@ -250,7 +261,6 @@ public class ScriptGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("unset LD_PRELOAD\n");
-        sb.append("export PROOT_NO_SECCOMP=1\n");
         sb.append("PROOT=\"").append(prootExe.getAbsolutePath()).append("\"\n");
         sb.append("LOADER=\"").append(loaderExe.getAbsolutePath()).append("\"\n");
         sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
@@ -262,6 +272,7 @@ public class ScriptGenerator {
 
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
         sb.append("mkdir -p \"$ROOTFS/.l2s\"\n");
+        sb.append("mkdir -p \"$ROOTFS/tmp/.empty_selinux\"\n");
         sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" 2>/dev/null\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
 
@@ -293,13 +304,21 @@ public class ScriptGenerator {
         sb.append("  --kill-on-exit \\\n");
         sb.append("  --link2symlink \\\n");
         sb.append("  --sysvipc \\\n");
+        sb.append("  -L \\\n");
+        sb.append("  --kernel-release=6.1.0-Nuxora \\\n");
         sb.append("  --fix-selinux-xattr \\\n");
         sb.append("  -0 \\\n");
         sb.append("  -r \"$ROOTFS\" \\\n");
         sb.append("  -b /dev \\\n");
         sb.append("  -b /proc \\\n");
         sb.append("  -b /sys \\\n");
+        sb.append("  -b \"$ROOTFS/tmp/.empty_selinux:/sys/fs/selinux\" \\\n");
+        sb.append("  -b /proc/self/fd:/dev/fd \\\n");
+        sb.append("  -b /proc/self/fd/0:/dev/stdin \\\n");
+        sb.append("  -b /proc/self/fd/1:/dev/stdout \\\n");
+        sb.append("  -b /proc/self/fd/2:/dev/stderr \\\n");
         sb.append("  -b /dev/urandom:/dev/random \\\n");
+        sb.append("  -b \"$ROOTFS/dev/shm:/dev/shm\" \\\n");
 
         if (distro.isMountSdcard()) {
             sb.append("  -b /sdcard \\\n");
