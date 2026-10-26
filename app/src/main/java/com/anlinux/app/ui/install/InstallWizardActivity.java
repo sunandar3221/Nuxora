@@ -23,6 +23,7 @@ import com.anlinux.app.data.database.DistroDatabaseHelper;
 import com.anlinux.app.data.model.Distro;
 import com.anlinux.app.data.model.ExecutionMode;
 import com.anlinux.app.data.model.InstalledDistro;
+import com.anlinux.app.service.LinuxService;
 import com.anlinux.app.ui.terminal.TerminalActivity;
 import com.anlinux.app.utils.DeviceUtils;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -159,6 +160,7 @@ public class InstallWizardActivity extends AppCompatActivity {
     }
 
     private void performInstall(ExecutionMode executionMode, String distroDisplayName, boolean mountSd, boolean installExtras) {
+        LinuxService.startInstall(this, distroDisplayName);
         try {
             log("Memulai proses instalasi untuk " + distroDisplayName + "…");
             log("Mode: " + executionMode.getDisplayName());
@@ -166,6 +168,7 @@ public class InstallWizardActivity extends AppCompatActivity {
             // 1. Prepare PRoot if Non-Root
             if (executionMode == ExecutionMode.PROOT) {
                 setStatus("Memeriksa komponen PRoot…");
+                LinuxService.updateInstallProgress(this, distroDisplayName, "Menyiapkan komponen PRoot…", 0, true);
                 PRootManager prootManager = new PRootManager(this);
                 if (!prootManager.isProotInstalled()) {
                     log("Mengunduh komponen PRoot binary…");
@@ -196,6 +199,7 @@ public class InstallWizardActivity extends AppCompatActivity {
 
             if (localFileUriString != null) {
                 setStatus("Menyalin berkas arsip lokal…");
+                LinuxService.updateInstallProgress(this, distroDisplayName, "Menyalin berkas arsip lokal…", 0, true);
                 log("Membaca berkas lokal…");
                 Uri localUri = Uri.parse(localFileUriString);
                 try (InputStream in = getContentResolver().openInputStream(localUri);
@@ -213,7 +217,7 @@ public class InstallWizardActivity extends AppCompatActivity {
                 }
                 setStatus("Mengunduh image sistem Linux (RootFS)…");
                 log("Mengunduh dari: " + downloadUrl);
-                downloadFile(downloadUrl, archiveFile);
+                downloadFile(downloadUrl, archiveFile, distroDisplayName);
                 log("Pengunduhan selesai. Ukuran berkas: " + DeviceUtils.formatFileSize(archiveFile.length()));
             }
 
@@ -223,6 +227,7 @@ public class InstallWizardActivity extends AppCompatActivity {
 
             // 3. Extract Rootfs
             setStatus("Mengekstrak berkas sistem Linux…");
+            LinuxService.updateInstallProgress(this, distroDisplayName, "Mengekstrak berkas sistem Linux…", 0, true);
             File distrosBaseDir = new File(getFilesDir(), "distros");
             if (!distrosBaseDir.exists()) distrosBaseDir.mkdirs();
 
@@ -233,13 +238,18 @@ public class InstallWizardActivity extends AppCompatActivity {
             log("Mengekstrak ke: " + targetRootfsDir.getAbsolutePath());
             ExtractionHelper.extractArchive(archiveFile, targetRootfsDir, (currentFile, count) -> {
                 log("[" + count + "] Ekstrak: " + currentFile);
+                if (count % 150 == 0) {
+                    LinuxService.updateInstallProgress(this, distroDisplayName, "Mengekstrak berkas (" + count + " file)...", 0, true);
+                }
             });
             log("Ekstraksi RootFS selesai!");
 
             // 4. Configure DNS & environments
             setStatus("Mengkonfigurasi DNS & paket sistem…");
+            LinuxService.updateInstallProgress(this, distroDisplayName, "Mengkonfigurasi DNS & paket sistem…", 95, false);
             ScriptGenerator.setupDns(targetRootfsDir);
             log("DNS resolv.conf disetel ke Google & Cloudflare DNS.");
+            ScriptGenerator.setupPackageManagerFixes(targetRootfsDir);
             ScriptGenerator.setupExtrasScript(targetRootfsDir, installExtras);
             if (installExtras) {
                 log("Paket penting (nano, curl, bash, sudo) diatur untuk dipasang otomatis saat sesi pertama.");
@@ -286,14 +296,16 @@ public class InstallWizardActivity extends AppCompatActivity {
                 btnActionInstall.setText("Coba Lagi");
                 Toast.makeText(this, "Gagal menginstal: " + errorMsg, Toast.LENGTH_LONG).show();
             });
+        } finally {
+            LinuxService.stopInstall(this);
         }
     }
 
-    private void downloadFile(String downloadUrl, File targetFile) throws Exception {
-        downloadFileWithRedirects(downloadUrl, targetFile, 0);
+    private void downloadFile(String downloadUrl, File targetFile, String distroDisplayName) throws Exception {
+        downloadFileWithRedirects(downloadUrl, targetFile, 0, distroDisplayName);
     }
 
-    private void downloadFileWithRedirects(String downloadUrl, File targetFile, int redirectCount) throws Exception {
+    private void downloadFileWithRedirects(String downloadUrl, File targetFile, int redirectCount, String distroDisplayName) throws Exception {
         if (redirectCount > 6) {
             throw new Exception("Terlalu banyak pengalihan (Too many redirects) saat mengunduh.");
         }
@@ -311,7 +323,7 @@ public class InstallWizardActivity extends AppCompatActivity {
             if (redirectUrl != null) {
                 log("Mengikuti pengalihan URL…");
                 conn.disconnect();
-                downloadFileWithRedirects(redirectUrl, targetFile, redirectCount + 1);
+                downloadFileWithRedirects(redirectUrl, targetFile, redirectCount + 1, distroDisplayName);
                 return;
             }
         }
@@ -335,13 +347,17 @@ public class InstallWizardActivity extends AppCompatActivity {
                     lastLogTime = System.currentTimeMillis();
                     if (totalSize > 0) {
                         int percent = (int) ((downloaded * 100) / totalSize);
-                        log("Mengunduh: " + percent + "% (" + DeviceUtils.formatFileSize(downloaded) + " / " + DeviceUtils.formatFileSize(totalSize) + ")");
+                        String progressText = "Mengunduh: " + percent + "% (" + DeviceUtils.formatFileSize(downloaded) + " / " + DeviceUtils.formatFileSize(totalSize) + ")";
+                        log(progressText);
+                        LinuxService.updateInstallProgress(this, distroDisplayName, progressText, percent, false);
                         mainHandler.post(() -> {
                             progressBar.setIndeterminate(false);
                             progressBar.setProgress(percent);
                         });
                     } else {
-                        log("Mengunduh: " + DeviceUtils.formatFileSize(downloaded));
+                        String progressText = "Mengunduh: " + DeviceUtils.formatFileSize(downloaded);
+                        log(progressText);
+                        LinuxService.updateInstallProgress(this, distroDisplayName, progressText, 0, true);
                     }
                 }
             }

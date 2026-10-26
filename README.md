@@ -1,6 +1,6 @@
-# AnLinux
+# LinuxDroid
 
-**AnLinux** adalah aplikasi Android berbasis Java murni yang dirancang untuk menjalankan berbagai distribusi Linux secara mulus di perangkat Android, baik dalam mode **Non-Root (PRoot)** maupun **Root (Chroot)**, dengan antarmuka modern yang ramah pemula bergaya **Google Material You (Material 3)**.
+**LinuxDroid** adalah aplikasi Android open-source berbasis Java murni yang dirancang untuk menjalankan berbagai distribusi Linux secara mulus di perangkat Android, baik dalam mode **Non-Root (PRoot)** maupun **Root (Chroot)**, dengan antarmuka modern yang ramah pemula bergaya **Google Material You (Material 3)**.
 
 ---
 
@@ -19,6 +19,15 @@
 - ⚡ **Dual Execution Engine**:
   - **Mode Non-Root (PRoot)**: Berjalan tanpa memerlukan akses root di semua HP Android modern (Android 7.0 s/d Android 14+). Komponen binary PRoot dipaketkan langsung dalam APK native libraries (`jniLibs`).
   - **Mode Root (Chroot)**: Memanfaatkan kernel Android secara langsung untuk performa maksimal (mendukung Magisk dan KernelSU) dengan auto-mount & auto-clean unmount.
+- 🔧 **Perbaikan Package Manager Lengkap (Anti-Error Dpkg/APT)**:
+  - Otomatis mengatasi error `dpkg` dan `apt update/upgrade` di semua merk ponsel (MIUI/HyperOS, Samsung OneUI, ColorOS, dll.).
+  - Bypass seccomp restrictions (`PROOT_NO_SECCOMP=1`).
+  - DPKG `force-unsafe-io` untuk mencegah freeze & fsync error pada storage Android.
+  - Patch APT Sandbox User (`APT::Sandbox::User "root"`) & injeksi Android `AID_INET` (GID 3003) agar paket download tidak ditolak kernel.
+  - Implementasi `/usr/sbin/policy-rc.d` (`exit 101`) agar instalasi daemon tidak gagal pada post-installation dpkg.
+- 🔔 **Layanan Foreground & Notifikasi Aktif**:
+  - **Sesi Terminal Tidak Mati**: Saat terminal dibuka, Foreground Service berjalan dengan notifikasi permanen ("LinuxDroid - Sesi Terminal Aktif") dan WakeLock CPU sehingga proses Linux tetap berjalan lancar saat Anda beralih aplikasi atau layar dimatikan.
+  - **Progress Bar Notifikasi Instalasi**: Pengunduhan dan ekstraksi distro dipantau langsung di bar notifikasi dengan progress bar real-time tanpa risiko proses dimatikan oleh sistem Android.
 - 💻 **Terminal Interaktif Ala Termux (True PTY)**:
   - Mengintegrasikan engine emulator terminal resmi dari **Termux** (`TerminalView` & `TerminalSession` via `libtermux.so` PTY).
   - Dukungan penuh aplikasi terminal interaktif CLI seperti `nano`, `vim`, `htop`, `top`, `tmux`, `less`, dan auto-completion Tab di Bash/Zsh.
@@ -51,8 +60,8 @@ Aplikasi mendukung 4 arsitektur prosesor utama:
 
 ### Perintah Build:
 ```bash
-git clone https://github.com/wellkops/AnLinux.git
-cd AnLinux
+git clone https://github.com/wellkops/AnLinux.git LinuxDroid
+cd LinuxDroid
 ./gradlew assembleDebug
 ```
 File APK hasil build akan berada di `app/build/outputs/apk/debug/app-debug.apk`.
@@ -65,7 +74,7 @@ Unduh versi rilis `.apk` terbaru langsung dari halaman [Releases](https://github
 
 Pasang via terminal ADB:
 ```bash
-adb install -r AnLinux-v1.0.0.apk
+adb install -r LinuxDroid-v1.0.0.apk
 ```
 
 ---

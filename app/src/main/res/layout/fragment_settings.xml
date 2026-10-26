@@ -150,7 +150,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tentang AnLinux"
+                    android:text="Tentang LinuxDroid"
                     android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                 <TextView

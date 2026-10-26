@@ -2,8 +2,11 @@ package com.anlinux.app.core;
 
 import com.anlinux.app.data.model.InstalledDistro;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
@@ -30,10 +33,96 @@ public class ScriptGenerator {
     }
 
     /**
+     * Fix common package manager issues in Android PRoot environments
+     * (dpkg unsafe-io, apt sandbox user root, policy-rc.d exit 101, Android AID_INET group)
+     */
+    public static void setupPackageManagerFixes(File rootfsDir) {
+        setupDns(rootfsDir);
+
+        try {
+            // 1. DPKG unsafe-io to prevent fsync/sync failures on Android storage
+            File dpkgConfDir = new File(rootfsDir, "etc/dpkg/dpkg.cfg.d");
+            if (!dpkgConfDir.exists()) {
+                dpkgConfDir.mkdirs();
+            }
+            File unsafeIo = new File(dpkgConfDir, "01unsafe-io");
+            String dpkgConf = "force-unsafe-io\n" +
+                    "force-bad-path\n" +
+                    "path-exclude=/usr/share/man/*\n" +
+                    "path-exclude=/usr/share/doc/*\n" +
+                    "path-include=/usr/share/doc/*/copyright\n";
+            try (FileOutputStream fos = new FileOutputStream(unsafeIo)) {
+                fos.write(dpkgConf.getBytes(StandardCharsets.UTF_8));
+            }
+
+            // 2. APT sandbox user fix for Android (prevents socket permission denied)
+            File aptConfDir = new File(rootfsDir, "etc/apt/apt.conf.d");
+            if (!aptConfDir.exists()) {
+                aptConfDir.mkdirs();
+            }
+            File aptSandbox = new File(aptConfDir, "01sandbox");
+            String aptConf = "APT::Sandbox::User \"root\";\n" +
+                    "Acquire::http::Pipeline-Depth \"0\";\n" +
+                    "Acquire::http::No-Cache \"true\";\n" +
+                    "Acquire::BrokenProxy \"true\";\n";
+            try (FileOutputStream fos = new FileOutputStream(aptSandbox)) {
+                fos.write(aptConf.getBytes(StandardCharsets.UTF_8));
+            }
+
+            // 3. /usr/sbin/policy-rc.d to prevent service startup failures during dpkg configure
+            File sbinDir = new File(rootfsDir, "usr/sbin");
+            if (!sbinDir.exists()) {
+                sbinDir.mkdirs();
+            }
+            File policyRc = new File(sbinDir, "policy-rc.d");
+            String policyContent = "#!/bin/sh\nexit 101\n";
+            try (FileOutputStream fos = new FileOutputStream(policyRc)) {
+                fos.write(policyContent.getBytes(StandardCharsets.UTF_8));
+            }
+            policyRc.setExecutable(true, false);
+
+            // 4. Ensure Android AID_INET (3003) exists in /etc/group
+            File groupFile = new File(rootfsDir, "etc/group");
+            if (groupFile.exists()) {
+                boolean hasAidInet = false;
+                StringBuilder groupContent = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(groupFile), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.contains(":3003:")) {
+                            hasAidInet = true;
+                        }
+                        groupContent.append(line).append("\n");
+                    }
+                }
+                if (!hasAidInet) {
+                    groupContent.append("aid_inet:x:3003:root,_apt\n");
+                    groupContent.append("aid_net_raw:x:3004:root\n");
+                    groupContent.append("aid_admin:x:3005:root\n");
+                    try (FileOutputStream fos = new FileOutputStream(groupFile)) {
+                        fos.write(groupContent.toString().getBytes(StandardCharsets.UTF_8));
+                    }
+                }
+            }
+
+            // 5. Clean stale dpkg locks if any
+            File dpkgLock = new File(rootfsDir, "var/lib/dpkg/lock");
+            if (dpkgLock.exists()) dpkgLock.delete();
+            File dpkgLockFrontend = new File(rootfsDir, "var/lib/dpkg/lock-frontend");
+            if (dpkgLockFrontend.exists()) dpkgLockFrontend.delete();
+            File aptListsLock = new File(rootfsDir, "var/lib/apt/lists/lock");
+            if (aptListsLock.exists()) aptListsLock.delete();
+            File aptArchiveLock = new File(rootfsDir, "var/cache/apt/archives/lock");
+            if (aptArchiveLock.exists()) aptArchiveLock.delete();
+
+        } catch (Exception ignored) {}
+    }
+
+    /**
      * Prepares helper scripts and welcome profile inside the distro
      */
     public static void setupExtrasScript(File rootfsDir, boolean enableFirstRun) {
-        setupDns(rootfsDir);
+        setupPackageManagerFixes(rootfsDir);
 
         File binDir = new File(rootfsDir, "usr/local/bin");
         if (!binDir.exists()) {
@@ -43,21 +132,21 @@ public class ScriptGenerator {
         // Script to easily install essential packages (nano, curl, wget, bash, sudo)
         File extrasScript = new File(binDir, "install-extras");
         String content = "#!/bin/sh\n" +
-                "echo \"[AnLinux] Memeriksa koneksi & memasang paket tambahan...\"\n" +
+                "echo \"[LinuxDroid] Memeriksa koneksi & memasang paket tambahan...\"\n" +
                 "if command -v apk >/dev/null 2>&1; then\n" +
-                "    echo \"[AnLinux] Terdeteksi Alpine Linux (APK)...\"\n" +
+                "    echo \"[LinuxDroid] Terdeteksi Alpine Linux (APK)...\"\n" +
                 "    apk update && apk add bash nano curl wget ca-certificates sudo\n" +
                 "elif command -v apt-get >/dev/null 2>&1; then\n" +
-                "    echo \"[AnLinux] Terdeteksi Debian/Ubuntu (APT)...\"\n" +
+                "    echo \"[LinuxDroid] Terdeteksi Debian/Ubuntu (APT)...\"\n" +
                 "    apt-get update && apt-get install -y nano curl wget sudo ca-certificates\n" +
                 "elif command -v pacman >/dev/null 2>&1; then\n" +
-                "    echo \"[AnLinux] Terdeteksi Arch Linux (Pacman)...\"\n" +
+                "    echo \"[LinuxDroid] Terdeteksi Arch Linux (Pacman)...\"\n" +
                 "    pacman -Syu --noconfirm nano curl wget sudo ca-certificates\n" +
                 "elif command -v dnf >/dev/null 2>&1; then\n" +
-                "    echo \"[AnLinux] Terdeteksi Fedora (DNF)...\"\n" +
+                "    echo \"[LinuxDroid] Terdeteksi Fedora (DNF)...\"\n" +
                 "    dnf install -y nano curl wget sudo ca-certificates\n" +
                 "fi\n" +
-                "echo \"[AnLinux] Paket penting (nano, curl, bash, sudo) selesai disiapkan!\"\n";
+                "echo \"[LinuxDroid] Paket penting (nano, curl, bash, sudo) selesai disiapkan!\"\n";
 
         try (FileOutputStream fos = new FileOutputStream(extrasScript)) {
             fos.write(content.getBytes(StandardCharsets.UTF_8));
@@ -71,14 +160,14 @@ public class ScriptGenerator {
         } catch (IOException ignored) {}
         rootExtras.setExecutable(true, false);
 
-        // Create /etc/profile.d/00-anlinux.sh for prompt and first-run
+        // Create /etc/profile.d/00-linuxdroid.sh for prompt and first-run
         File profileD = new File(rootfsDir, "etc/profile.d");
         if (!profileD.exists()) {
             profileD.mkdirs();
         }
-        File anlinuxProfile = new File(profileD, "00-anlinux.sh");
+        File linuxdroidProfile = new File(profileD, "00-linuxdroid.sh");
         StringBuilder sb = new StringBuilder();
-        sb.append("# AnLinux Shell Environment\n");
+        sb.append("# LinuxDroid Shell Environment\n");
         sb.append("export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]# '\n");
         sb.append("export TERM=xterm-256color\n");
         sb.append("export HOME=/root\n");
@@ -89,14 +178,14 @@ public class ScriptGenerator {
             sb.append("if [ -f /root/.first_run ]; then\n");
             sb.append("    rm -f /root/.first_run\n");
             sb.append("    echo \"=====================================================\"\n");
-            sb.append("    echo \"  Selamat Datang di Linux (AnLinux)!\"\n");
+            sb.append("    echo \"  Selamat Datang di Linux (LinuxDroid)!\"\n");
             sb.append("    echo \"  Distro siap digunakan dengan hak akses ROOT.\"\n");
             sb.append("    echo \"=====================================================\"\n");
             sb.append("    /usr/local/bin/install-extras\n");
             sb.append("fi\n");
         }
 
-        try (FileOutputStream fos = new FileOutputStream(anlinuxProfile)) {
+        try (FileOutputStream fos = new FileOutputStream(linuxdroidProfile)) {
             fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException ignored) {}
 
@@ -112,7 +201,7 @@ public class ScriptGenerator {
      * Generate PRoot startup bash script with nativeLibraryDir support
      */
     public static File createProotLaunchScript(PRootManager prootManager, File rootfsDir, InstalledDistro distro) throws IOException {
-        setupDns(rootfsDir);
+        setupPackageManagerFixes(rootfsDir);
         setupExtrasScript(rootfsDir, false);
         File internalBinDir = prootManager.getBinDir();
         File script = new File(internalBinDir, "start_" + distro.getId() + ".sh");
@@ -124,6 +213,7 @@ public class ScriptGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("unset LD_PRELOAD\n");
+        sb.append("export PROOT_NO_SECCOMP=1\n");
         sb.append("PROOT=\"").append(prootExe.getAbsolutePath()).append("\"\n");
         sb.append("LOADER=\"").append(loaderExe.getAbsolutePath()).append("\"\n");
         sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
@@ -134,6 +224,11 @@ public class ScriptGenerator {
 
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
+
+        sb.append("# Clear any stale package manager locks\n");
+        sb.append("rm -f \"$ROOTFS/var/lib/dpkg/lock\"* 2>/dev/null\n");
+        sb.append("rm -f \"$ROOTFS/var/lib/apt/lists/lock\"* 2>/dev/null\n");
+        sb.append("rm -f \"$ROOTFS/var/cache/apt/archives/lock\"* 2>/dev/null\n");
 
         sb.append("if [ ! -x \"$PROOT\" ]; then\n");
         sb.append("    chmod 755 \"$PROOT\" 2>/dev/null\n");
@@ -157,6 +252,7 @@ public class ScriptGenerator {
         sb.append("exec \"$PROOT\" \\\n");
         sb.append("  --kill-on-exit \\\n");
         sb.append("  --link2symlink \\\n");
+        sb.append("  --sysvipc \\\n");
         sb.append("  -0 \\\n");
         sb.append("  -r \"$ROOTFS\" \\\n");
         sb.append("  -b /dev \\\n");
@@ -194,13 +290,18 @@ public class ScriptGenerator {
      * Generate Chroot (Root mode) startup bash script with robust mounts
      */
     public static File createChrootLaunchScript(File internalBinDir, File rootfsDir, InstalledDistro distro) throws IOException {
-        setupDns(rootfsDir);
+        setupPackageManagerFixes(rootfsDir);
         setupExtrasScript(rootfsDir, false);
         File script = new File(internalBinDir, "start_root_" + distro.getId() + ".sh");
 
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
+
+        sb.append("# Clear any stale package manager locks\n");
+        sb.append("rm -f \"$ROOTFS/var/lib/dpkg/lock\"* 2>/dev/null\n");
+        sb.append("rm -f \"$ROOTFS/var/lib/apt/lists/lock\"* 2>/dev/null\n");
+        sb.append("rm -f \"$ROOTFS/var/cache/apt/archives/lock\"* 2>/dev/null\n");
 
         sb.append("# Robust mount checks using /proc/mounts\n");
         sb.append("grep -F \"$ROOTFS/proc\" /proc/mounts >/dev/null 2>&1 || mount -t proc proc \"$ROOTFS/proc\"\n");

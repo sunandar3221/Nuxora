@@ -25,6 +25,8 @@ import com.anlinux.app.R;
 import com.anlinux.app.core.ChrootManager;
 import com.anlinux.app.core.PRootManager;
 import com.anlinux.app.core.ScriptGenerator;
+import com.anlinux.app.service.LinuxService;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.anlinux.app.data.database.DistroDatabaseHelper;
 import com.anlinux.app.data.model.ExecutionMode;
 import com.anlinux.app.data.model.InstalledDistro;
@@ -100,7 +102,25 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             }
         });
 
-        btnCloseTerminal.setOnClickListener(v -> finish());
+        btnCloseTerminal.setOnClickListener(v -> showExitConfirmationDialog());
+    }
+
+    private void showExitConfirmationDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Sesi Terminal")
+                .setMessage("Apakah Anda ingin menutup sesi Linux atau membiarkannya tetap berjalan di latar belakang?")
+                .setPositiveButton("Latar Belakang", (dialog, which) -> {
+                    moveTaskToBack(true);
+                })
+                .setNegativeButton("Hentikan Sesi", (dialog, which) -> {
+                    if (terminalSession != null) {
+                        terminalSession.finishIfRunning();
+                    }
+                    LinuxService.stopTerminal(this);
+                    finish();
+                })
+                .setNeutralButton("Batal", null)
+                .show();
     }
 
     private void setupKeyToolbar() {
@@ -232,6 +252,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             terminalView.attachSession(terminalSession);
 
             DistroDatabaseHelper.getInstance(this).updateRunningStatus(distro.getId(), true);
+            LinuxService.startTerminal(this, distro.getId(), distro.getName());
 
             terminalView.post(() -> {
                 terminalView.requestFocus();
@@ -248,16 +269,25 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     }
 
     @Override
+    public void onBackPressed() {
+        // Keep terminal running in background when pressing back, like Termux
+        moveTaskToBack(true);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (terminalSession != null) {
-            terminalSession.finishIfRunning();
-        }
-        if (distro != null) {
-            if (distro.getExecutionMode() == ExecutionMode.ROOT) {
-                new ChrootManager(this).stopChroot(distro);
+        if (isFinishing()) {
+            if (terminalSession != null) {
+                terminalSession.finishIfRunning();
             }
-            DistroDatabaseHelper.getInstance(this).updateRunningStatus(distro.getId(), false);
+            if (distro != null) {
+                if (distro.getExecutionMode() == ExecutionMode.ROOT) {
+                    new ChrootManager(this).stopChroot(distro);
+                }
+                DistroDatabaseHelper.getInstance(this).updateRunningStatus(distro.getId(), false);
+            }
+            LinuxService.stopTerminal(this);
         }
     }
 
@@ -288,6 +318,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
                 }
                 DistroDatabaseHelper.getInstance(this).updateRunningStatus(distro.getId(), false);
             }
+            LinuxService.stopTerminal(this);
             Toast.makeText(this, "Sesi Linux telah berakhir (exit: " + exitCode + ")", Toast.LENGTH_SHORT).show();
             finish();
         });
