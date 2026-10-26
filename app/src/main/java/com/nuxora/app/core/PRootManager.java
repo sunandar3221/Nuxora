@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class PRootManager {
 
     private static final String PROOT_RELEASE_URL_BASE =
-            "https://github.com/wellkops/Nuxora/releases/download/v1.2.2/proot-";
+            "https://github.com/wellkops/Nuxora/releases/download/v1.3.0/proot-";
 
     private final Context context;
     private final File binDir;
