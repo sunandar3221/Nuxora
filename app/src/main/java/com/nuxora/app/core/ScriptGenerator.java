@@ -40,7 +40,17 @@ public class ScriptGenerator {
         setupDns(rootfsDir);
 
         try {
-            // 1. DPKG unsafe-io to prevent fsync/sync failures on Android storage
+            // 0. Ensure .l2s and tmp directories exist for link2symlink hardlink emulation
+            File l2sDir = new File(rootfsDir, ".l2s");
+            if (!l2sDir.exists()) {
+                l2sDir.mkdirs();
+            }
+            File tmpDir = new File(rootfsDir, "tmp");
+            if (!tmpDir.exists()) {
+                tmpDir.mkdirs();
+            }
+
+            // 1. DPKG unsafe-io to prevent fsync/sync and hardlink failures on Android storage
             File dpkgConfDir = new File(rootfsDir, "etc/dpkg/dpkg.cfg.d");
             if (!dpkgConfDir.exists()) {
                 dpkgConfDir.mkdirs();
@@ -48,6 +58,7 @@ public class ScriptGenerator {
             File unsafeIo = new File(dpkgConfDir, "01unsafe-io");
             String dpkgConf = "force-unsafe-io\n" +
                     "force-bad-path\n" +
+                    "no-debsig\n" +
                     "path-exclude=/usr/share/man/*\n" +
                     "path-exclude=/usr/share/doc/*\n" +
                     "path-include=/usr/share/doc/*/copyright\n";
@@ -55,16 +66,24 @@ public class ScriptGenerator {
                 fos.write(dpkgConf.getBytes(StandardCharsets.UTF_8));
             }
 
-            // 2. APT sandbox user fix for Android (prevents socket permission denied)
+            // 2. APT sandbox and dpkg option fixes for Android PRoot
             File aptConfDir = new File(rootfsDir, "etc/apt/apt.conf.d");
             if (!aptConfDir.exists()) {
                 aptConfDir.mkdirs();
             }
             File aptSandbox = new File(aptConfDir, "01sandbox");
             String aptConf = "APT::Sandbox::User \"root\";\n" +
+                    "APT::Sandbox::Seccomp \"false\";\n" +
+                    "Dir::Cache::pkgcache \"\";\n" +
+                    "Dir::Cache::srcpkgcache \"\";\n" +
                     "Acquire::http::Pipeline-Depth \"0\";\n" +
                     "Acquire::http::No-Cache \"true\";\n" +
-                    "Acquire::BrokenProxy \"true\";\n";
+                    "Acquire::BrokenProxy \"true\";\n" +
+                    "DPkg::Options {\n" +
+                    "   \"--force-unsafe-io\";\n" +
+                    "   \"--force-bad-path\";\n" +
+                    "   \"--no-debsig\";\n" +
+                    "};\n";
             try (FileOutputStream fos = new FileOutputStream(aptSandbox)) {
                 fos.write(aptConf.getBytes(StandardCharsets.UTF_8));
             }
@@ -135,10 +154,10 @@ public class ScriptGenerator {
                 "echo \"[Nuxora] Memeriksa koneksi & memasang paket tambahan...\"\n" +
                 "if command -v apk >/dev/null 2>&1; then\n" +
                 "    echo \"[Nuxora] Terdeteksi Alpine Linux (APK)...\"\n" +
-                "    apk update && apk add bash nano curl wget ca-certificates sudo\n" +
+                "    apk update && apk add --no-cache --no-chown bash nano curl wget ca-certificates sudo\n" +
                 "elif command -v apt-get >/dev/null 2>&1; then\n" +
                 "    echo \"[Nuxora] Terdeteksi Debian/Ubuntu (APT)...\"\n" +
-                "    apt-get update && apt-get install -y nano curl wget sudo ca-certificates\n" +
+                "    DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Dpkg::Options::=\"--force-unsafe-io\" -o Dpkg::Options::=\"--force-bad-path\" nano curl wget sudo ca-certificates\n" +
                 "elif command -v pacman >/dev/null 2>&1; then\n" +
                 "    echo \"[Nuxora] Terdeteksi Arch Linux (Pacman)...\"\n" +
                 "    pacman -Syu --noconfirm nano curl wget sudo ca-certificates\n" +
@@ -153,11 +172,29 @@ public class ScriptGenerator {
         } catch (IOException ignored) {}
         extrasScript.setExecutable(true, false);
 
+        // Alpine apk wrapper to always bypass chown failures
+        File apkBinary = new File(rootfsDir, "sbin/apk");
+        if (apkBinary.exists()) {
+            File apkWrapper = new File(binDir, "apk");
+            String apkWrapperContent = "#!/bin/sh\n" +
+                    "if [ \"$1\" = \"add\" ]; then\n" +
+                    "    shift\n" +
+                    "    exec /sbin/apk add --no-chown \"$@\"\n" +
+                    "else\n" +
+                    "    exec /sbin/apk \"$@\"\n" +
+                    "fi\n";
+            try (FileOutputStream fos = new FileOutputStream(apkWrapper)) {
+                fos.write(apkWrapperContent.getBytes(StandardCharsets.UTF_8));
+            } catch (IOException ignored) {}
+            apkWrapper.setExecutable(true, false);
+        }
+
         // Backup in /root/install-extras.sh
         File rootExtras = new File(rootfsDir, "root/install-extras.sh");
         try (FileOutputStream fos = new FileOutputStream(rootExtras)) {
             fos.write(content.getBytes(StandardCharsets.UTF_8));
         } catch (IOException ignored) {}
+        rootExtras.setExecutable(true, false);
         rootExtras.setExecutable(true, false);
 
         // Create /etc/profile.d/00-linuxdroid.sh for prompt and first-run
@@ -221,8 +258,11 @@ public class ScriptGenerator {
         sb.append("export LD_LIBRARY_PATH=\"").append(libPath).append(":$LD_LIBRARY_PATH\"\n");
         sb.append("export PROOT_LOADER=\"$LOADER\"\n");
         sb.append("export PROOT_TMP_DIR=\"$ROOTFS/tmp\"\n");
+        sb.append("export PROOT_L2S_DIR=\"$ROOTFS/.l2s\"\n");
 
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
+        sb.append("mkdir -p \"$ROOTFS/.l2s\"\n");
+        sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" 2>/dev/null\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
 
         sb.append("# Clear any stale package manager locks\n");
@@ -253,6 +293,7 @@ public class ScriptGenerator {
         sb.append("  --kill-on-exit \\\n");
         sb.append("  --link2symlink \\\n");
         sb.append("  --sysvipc \\\n");
+        sb.append("  --fix-selinux-xattr \\\n");
         sb.append("  -0 \\\n");
         sb.append("  -r \"$ROOTFS\" \\\n");
         sb.append("  -b /dev \\\n");
