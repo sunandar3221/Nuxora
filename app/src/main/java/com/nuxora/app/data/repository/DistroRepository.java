@@ -76,8 +76,8 @@ public class DistroRepository {
                 "Distro rolling release dengan paket perangkat lunak paling mutakhir dan manajer paket pacman.",
                 R.drawable.ic_distro_generic
         );
-        arch.addRootfsUrl("arm64", "http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz");
-        arch.addRootfsUrl("armhf", "http://os.archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz");
+        arch.addRootfsUrl("arm64", "https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz");
+        arch.addRootfsUrl("armhf", "https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz");
         list.add(arch);
 
         // 6. Fedora
