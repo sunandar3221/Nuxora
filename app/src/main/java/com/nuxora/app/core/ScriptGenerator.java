@@ -138,6 +138,18 @@ public class ScriptGenerator {
             File aptArchiveLock = new File(rootfsDir, "var/cache/apt/archives/lock");
             if (aptArchiveLock.exists()) aptArchiveLock.delete();
 
+            // 6. Arch Linux pacman gpg-agent fix for PRoot
+            File pacmanGpgDir = new File(rootfsDir, "etc/pacman.d/gnupg");
+            if (!pacmanGpgDir.exists()) {
+                pacmanGpgDir.mkdirs();
+            }
+            File gpgAgentConf = new File(pacmanGpgDir, "gpg-agent.conf");
+            if (!gpgAgentConf.exists()) {
+                try (FileOutputStream fos = new FileOutputStream(gpgAgentConf)) {
+                    fos.write("disable-scdaemon\n".getBytes(StandardCharsets.UTF_8));
+                }
+            }
+
         } catch (Exception ignored) {}
     }
 
@@ -164,7 +176,12 @@ public class ScriptGenerator {
                 "    DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Dpkg::Options::=\"--force-unsafe-io\" -o Dpkg::Options::=\"--force-bad-path\" nano curl wget sudo ca-certificates\n" +
                 "elif command -v pacman >/dev/null 2>&1; then\n" +
                 "    echo \"[Nuxora] Terdeteksi Arch Linux (Pacman)...\"\n" +
-                "    pacman -Syu --noconfirm nano curl wget sudo ca-certificates\n" +
+                "    if [ ! -d /etc/pacman.d/gnupg/private-keys-v1.d ]; then\n" +
+                "        echo \"[Nuxora] Menyiapkan pacman keyring (harap tunggu)...\"\n" +
+                "        pacman-key --init 2>/dev/null || true\n" +
+                "        pacman-key --populate 2>/dev/null || true\n" +
+                "    fi\n" +
+                "    pacman -Sy --noconfirm --needed nano curl wget sudo ca-certificates || true\n" +
                 "elif command -v dnf >/dev/null 2>&1; then\n" +
                 "    echo \"[Nuxora] Terdeteksi Fedora (DNF)...\"\n" +
                 "    dnf install -y nano curl wget sudo ca-certificates\n" +

@@ -19,8 +19,10 @@ import java.util.concurrent.TimeUnit;
 
 public class PRootManager {
 
-    private static final String PROOT_RELEASE_URL_BASE =
-            "https://github.com/wellkops/Nuxora/releases/download/v1.3.0/proot-";
+    private static final String[] PROOT_RELEASE_URL_BASES = new String[]{
+            "https://github.com/wellkops/Nuxora/releases/latest/download/proot-",
+            "https://github.com/wellkops/Nuxora/releases/download/v1.3.0/proot-"
+    };
 
     private final Context context;
     private final File binDir;
@@ -71,7 +73,6 @@ public class PRootManager {
         }
 
         String arch = resolveAssetArchDir();
-        String downloadUrl = PROOT_RELEASE_URL_BASE + arch + ".tar.gz";
 
         if (progressListener != null) {
             progressListener.onProgress("Mengunduh komponen PRoot (" + arch + ")…", 1);
@@ -86,29 +87,46 @@ public class PRootManager {
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
                 .followRedirects(true)
+                .followSslRedirects(true)
                 .build();
 
-        Request request = new Request.Builder()
-                .url(downloadUrl)
-                .build();
+        boolean downloadSuccess = false;
+        String lastError = "";
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Gagal mengunduh komponen PRoot (HTTP " + response.code() + ")");
-            }
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new IOException("Gagal mengunduh komponen PRoot: Response body kosong.");
-            }
+        for (String urlBase : PROOT_RELEASE_URL_BASES) {
+            String downloadUrl = urlBase + arch + ".tar.gz";
+            Request request = new Request.Builder()
+                    .url(downloadUrl)
+                    .header("User-Agent", "Nuxora/1.3.0 (Android; Mobile)")
+                    .build();
 
-            try (InputStream in = body.byteStream();
-                 FileOutputStream out = new FileOutputStream(tempTarGz)) {
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, read);
+            try (Response response = client.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+                    ResponseBody body = response.body();
+                    if (body != null) {
+                        try (InputStream in = body.byteStream();
+                             FileOutputStream out = new FileOutputStream(tempTarGz)) {
+                            byte[] buffer = new byte[8192];
+                            int read;
+                            while ((read = in.read(buffer)) != -1) {
+                                out.write(buffer, 0, read);
+                            }
+                        }
+                        if (tempTarGz.exists() && tempTarGz.length() > 1000) {
+                            downloadSuccess = true;
+                            break;
+                        }
+                    }
+                } else {
+                    lastError = "HTTP " + response.code();
                 }
+            } catch (Exception e) {
+                lastError = e.getMessage() != null ? e.getMessage() : e.toString();
             }
+        }
+
+        if (!downloadSuccess) {
+            throw new IOException("Gagal mengunduh komponen PRoot (" + lastError + "). Pastikan koneksi internet aktif.");
         }
 
         if (progressListener != null) {

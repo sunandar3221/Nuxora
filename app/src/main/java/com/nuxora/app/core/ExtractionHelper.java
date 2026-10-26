@@ -107,6 +107,11 @@ public class ExtractionHelper {
                     if (!outputFile.exists()) {
                         outputFile.mkdirs();
                     }
+                } else if (entry.isBlockDevice() || entry.isCharacterDevice() || entry.isFIFO()
+                        || entry.getName().startsWith("dev/") || entry.getName().startsWith("./dev/")) {
+                    // Skip device nodes and FIFOs: unprivileged Android cannot mknod (causes 'Operation not permitted'),
+                    // and PRoot already bind-mounts the host /dev and random devices anyway.
+                    continue;
                 } else if (entry.isSymbolicLink()) {
                     try {
                         Path link = Paths.get(outputFile.getAbsolutePath());
@@ -120,10 +125,38 @@ public class ExtractionHelper {
                         }
                         Files.createSymbolicLink(link, target);
                     } catch (Exception ignored) {}
+                } else if (entry.isLink()) {
+                    // Hard link in tar archive
+                    try {
+                        File targetFile = new File(destinationDir, entry.getLinkName());
+                        File parent = outputFile.getParentFile();
+                        if (parent != null && !parent.exists()) {
+                            parent.mkdirs();
+                        }
+                        if (outputFile.exists()) {
+                            outputFile.setWritable(true);
+                            outputFile.delete();
+                        }
+                        try {
+                            Files.createLink(outputFile.toPath(), targetFile.toPath());
+                        } catch (Throwable linkErr) {
+                            try {
+                                Files.createSymbolicLink(outputFile.toPath(), targetFile.toPath());
+                            } catch (Throwable symErr) {
+                                if (targetFile.exists()) {
+                                    Files.copy(targetFile.toPath(), outputFile.toPath());
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
                 } else {
                     File parent = outputFile.getParentFile();
                     if (parent != null && !parent.exists()) {
                         parent.mkdirs();
+                    }
+                    if (outputFile.exists()) {
+                        outputFile.setWritable(true);
+                        outputFile.delete();
                     }
 
                     try (OutputStream out = new FileOutputStream(outputFile)) {
@@ -131,16 +164,20 @@ public class ExtractionHelper {
                         while ((read = tarInput.read(buffer)) != -1) {
                             out.write(buffer, 0, read);
                         }
+                    } catch (Exception ignored) {
+                        // Ignore files that unprivileged Android filesystem refuses to create
                     }
 
                     // Restore executable / readable permissions
-                    int mode = entry.getMode();
-                    if ((mode & 0111) != 0) {
-                        outputFile.setExecutable(true, false);
-                    }
-                    if ((mode & 0444) != 0) {
-                        outputFile.setReadable(true, false);
-                    }
+                    try {
+                        int mode = entry.getMode();
+                        if ((mode & 0111) != 0) {
+                            outputFile.setExecutable(true, false);
+                        }
+                        if ((mode & 0444) != 0) {
+                            outputFile.setReadable(true, false);
+                        }
+                    } catch (Exception ignored) {}
                 }
             }
         }
