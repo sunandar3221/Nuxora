@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.anlinux.app'
+    namespace 'com.nuxora.app'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.anlinux.app"
+        applicationId "com.nuxora.app"
         minSdk 24
         targetSdk 34
         versionCode 1

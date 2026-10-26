@@ -1,13 +1,13 @@
-# LinuxDroid
+# Nuxora
 
-**LinuxDroid** adalah aplikasi Android open-source berbasis Java murni yang dirancang untuk menjalankan berbagai distribusi Linux secara mulus di perangkat Android, baik dalam mode **Non-Root (PRoot)** maupun **Root (Chroot)**, dengan antarmuka modern yang ramah pemula bergaya **Google Material You (Material 3)**.
+**Nuxora** adalah aplikasi Android open-source berbasis Java murni yang dirancang untuk menjalankan berbagai distribusi Linux secara mulus di perangkat Android, baik dalam mode **Non-Root (PRoot)** maupun **Root (Chroot)**, dengan antarmuka modern yang ramah pemula bergaya **Google Material You (Material 3)**.
 
 ---
 
 ## ✨ Fitur Utama
 
 - 🎨 **Desain Google Material You (Material 3)**: Tampilan modern, bersih, intuitif, ramah untuk pemula, dan mendukung Dynamic Colors.
-- 🐧 **Katalog Distro Populer**:
+- 🐧 **Katalog Distro Populer Siap Pakai**:
   - **Ubuntu** (LTS)
   - **Debian** (Stable)
   - **Kali Linux** (Rolling)
@@ -26,7 +26,7 @@
   - Patch APT Sandbox User (`APT::Sandbox::User "root"`) & injeksi Android `AID_INET` (GID 3003) agar paket download tidak ditolak kernel.
   - Implementasi `/usr/sbin/policy-rc.d` (`exit 101`) agar instalasi daemon tidak gagal pada post-installation dpkg.
 - 🔔 **Layanan Foreground & Notifikasi Aktif**:
-  - **Sesi Terminal Tidak Mati**: Saat terminal dibuka, Foreground Service berjalan dengan notifikasi permanen ("LinuxDroid - Sesi Terminal Aktif") dan WakeLock CPU sehingga proses Linux tetap berjalan lancar saat Anda beralih aplikasi atau layar dimatikan.
+  - **Sesi Terminal Tidak Mati**: Saat terminal dibuka, Foreground Service berjalan dengan notifikasi permanen ("Nuxora - Sesi Terminal Aktif") dan WakeLock CPU sehingga proses Linux tetap berjalan lancar saat Anda beralih aplikasi atau layar dimatikan.
   - **Progress Bar Notifikasi Instalasi**: Pengunduhan dan ekstraksi distro dipantau langsung di bar notifikasi dengan progress bar real-time tanpa risiko proses dimatikan oleh sistem Android.
 - 💻 **Terminal Interaktif Ala Termux (True PTY)**:
   - Mengintegrasikan engine emulator terminal resmi dari **Termux** (`TerminalView` & `TerminalSession` via `libtermux.so` PTY).
@@ -60,8 +60,8 @@ Aplikasi mendukung 4 arsitektur prosesor utama:
 
 ### Perintah Build:
 ```bash
-git clone https://github.com/wellkops/AnLinux.git LinuxDroid
-cd LinuxDroid
+git clone https://github.com/wellkops/AnLinux.git Nuxora
+cd Nuxora
 ./gradlew assembleDebug
 ```
 File APK hasil build akan berada di `app/build/outputs/apk/debug/app-debug.apk`.
@@ -74,7 +74,7 @@ Unduh versi rilis `.apk` terbaru langsung dari halaman [Releases](https://github
 
 Pasang via terminal ADB:
 ```bash
-adb install -r LinuxDroid-v1.0.0.apk
+adb install -r Nuxora-v1.0.0.apk
 ```
 
 ---
