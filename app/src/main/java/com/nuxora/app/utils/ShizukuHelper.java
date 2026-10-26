@@ -3,6 +3,8 @@ package com.nuxora.app.utils;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
+import com.nuxora.app.NuxoraApplication;
+
 import rikka.shizuku.Shizuku;
 
 import java.lang.reflect.Method;
@@ -13,7 +15,7 @@ public class ShizukuHelper {
 
     public static boolean isShizukuInstalledAndRunning() {
         try {
-            return Shizuku.pingBinder();
+            return NuxoraApplication.isShizukuConnected() || Shizuku.pingBinder();
         } catch (Throwable t) {
             return false;
         }
@@ -31,11 +33,13 @@ public class ShizukuHelper {
     }
 
     public static void requestShizukuPermission() {
-        if (isShizukuInstalledAndRunning()) {
-            try {
-                Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE);
-            } catch (Throwable ignored) {}
-        }
+        try {
+            if (isShizukuInstalledAndRunning()) {
+                if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                    Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE);
+                }
+            }
+        } catch (Throwable ignored) {}
     }
 
     /**

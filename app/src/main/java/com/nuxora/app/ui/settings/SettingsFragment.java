@@ -36,6 +36,18 @@ public class SettingsFragment extends Fragment {
     private MaterialButton btnPairShizuku;
     private MaterialButton btnGrantStorageShizuku;
 
+    private final Shizuku.OnBinderReceivedListener onBinderReceivedListener = () -> {
+        if (isAdded()) {
+            requireActivity().runOnUiThread(this::updateShizukuStatus);
+        }
+    };
+
+    private final Shizuku.OnBinderDeadListener onBinderDeadListener = () -> {
+        if (isAdded()) {
+            requireActivity().runOnUiThread(this::updateShizukuStatus);
+        }
+    };
+
     private final Shizuku.OnRequestPermissionResultListener shizukuPermissionListener =
             (requestCode, grantResult) -> {
                 if (requestCode == ShizukuHelper.SHIZUKU_PERMISSION_REQUEST_CODE) {
@@ -88,10 +100,15 @@ public class SettingsFragment extends Fragment {
 
         btnPairShizuku.setOnClickListener(v -> {
             if (!ShizukuHelper.isShizukuInstalledAndRunning()) {
-                Toast.makeText(requireContext(), "Layanan Shizuku tidak aktif atau belum terpasang di perangkat.", Toast.LENGTH_LONG).show();
+                Toast.makeText(requireContext(), "Layanan Shizuku tidak aktif atau belum terpasang di perangkat. Pastikan Shizuku berstatus 'Running' di aplikasi Shizuku.", Toast.LENGTH_LONG).show();
                 return;
             }
-            ShizukuHelper.requestShizukuPermission();
+            if (ShizukuHelper.hasShizukuPermission()) {
+                Toast.makeText(requireContext(), "Shizuku sudah terhubung dan izin aktif!", Toast.LENGTH_SHORT).show();
+            } else {
+                ShizukuHelper.requestShizukuPermission();
+            }
+            updateShizukuStatus();
         });
 
         btnGrantStorageShizuku.setOnClickListener(v -> {
@@ -109,6 +126,8 @@ public class SettingsFragment extends Fragment {
         });
 
         try {
+            Shizuku.addBinderReceivedListenerSticky(onBinderReceivedListener);
+            Shizuku.addBinderDeadListener(onBinderDeadListener);
             Shizuku.addRequestPermissionResultListener(shizukuPermissionListener);
         } catch (Throwable ignored) {}
 
@@ -126,6 +145,8 @@ public class SettingsFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         try {
+            Shizuku.removeBinderReceivedListener(onBinderReceivedListener);
+            Shizuku.removeBinderDeadListener(onBinderDeadListener);
             Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener);
         } catch (Throwable ignored) {}
     }
