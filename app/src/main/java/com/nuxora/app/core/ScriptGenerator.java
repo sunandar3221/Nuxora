@@ -275,6 +275,32 @@ public class ScriptGenerator {
         File loaderExe = prootManager.getLoaderExecutable();
         String libPath = prootManager.getLibraryPath();
 
+        android.content.Context context = prootManager.getContext();
+        boolean hasStorage = context != null && (
+                com.nuxora.app.utils.StoragePermissionHelper.hasStoragePermission(context) ||
+                com.nuxora.app.utils.ShizukuHelper.hasShizukuPermission()
+        );
+        boolean mountSdcard = distro.isMountSdcard() || hasStorage;
+
+        // Ensure symlink /root/sdcard -> /sdcard exists when storage is active
+        File rootDir = new File(rootfsDir, "root");
+        if (!rootDir.exists()) {
+            rootDir.mkdirs();
+        }
+        File rootSdcard = new File(rootDir, "sdcard");
+        if (mountSdcard) {
+            try {
+                if (rootSdcard.exists()) {
+                    rootSdcard.delete();
+                }
+                Runtime.getRuntime().exec(new String[]{"ln", "-sf", "/sdcard", rootSdcard.getAbsolutePath()}).waitFor();
+            } catch (Exception ignored) {}
+        } else {
+            if (rootSdcard.exists()) {
+                rootSdcard.delete();
+            }
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("unset LD_PRELOAD\n");
@@ -292,8 +318,14 @@ public class ScriptGenerator {
         sb.append("mkdir -p \"$ROOTFS/tmp/.empty_selinux\"\n");
         sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" 2>/dev/null\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
-        if (distro.isMountSdcard()) {
+        sb.append("mkdir -p \"$ROOTFS/root\" 2>/dev/null\n");
+
+        if (mountSdcard) {
             sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("ln -s /sdcard \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+        } else {
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
         }
 
         sb.append("# Clear any stale package manager locks\n");
@@ -340,11 +372,10 @@ public class ScriptGenerator {
         sb.append("  -b /dev/urandom:/dev/random \\\n");
         sb.append("  -b \"$ROOTFS/dev/shm:/dev/shm\" \\\n");
 
-        if (distro.isMountSdcard()) {
+        if (mountSdcard) {
             sb.append("  -b /storage/emulated/0:/sdcard \\\n");
             sb.append("  -b /storage/emulated/0:/mnt/sdcard \\\n");
             sb.append("  -b /storage \\\n");
-            sb.append("  -b /sdcard \\\n");
         }
 
         sb.append("  -w /root \\\n");
@@ -392,10 +423,15 @@ public class ScriptGenerator {
         sb.append("mkdir -p \"$ROOTFS/dev/pts\"\n");
         sb.append("grep -F \"$ROOTFS/dev/pts\" /proc/mounts >/dev/null 2>&1 || mount -t devpts devpts \"$ROOTFS/dev/pts\"\n");
 
+        sb.append("mkdir -p \"$ROOTFS/root\" 2>/dev/null\n");
         if (distro.isMountSdcard()) {
             sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("ln -s /sdcard \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
             sb.append("grep -F \"$ROOTFS/sdcard\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage/emulated/0 \"$ROOTFS/sdcard\" 2>/dev/null || mount -o bind /sdcard \"$ROOTFS/sdcard\" 2>/dev/null\n");
             sb.append("grep -F \"$ROOTFS/storage\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage \"$ROOTFS/storage\" 2>/dev/null\n");
+        } else {
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
         }
 
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");

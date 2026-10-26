@@ -86,6 +86,13 @@ public class DistroDatabaseHelper extends SQLiteOpenHelper {
         db.update(TABLE_INSTALLED, cv, COL_ID + "=?", new String[]{String.valueOf(id)});
     }
 
+    public synchronized void updateMountSdcard(long id, boolean mountSdcard) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(COL_MOUNT_SDCARD, mountSdcard ? 1 : 0);
+        db.update(TABLE_INSTALLED, cv, COL_ID + "=?", new String[]{String.valueOf(id)});
+    }
+
     public synchronized void updateDiskUsage(long id, String usage) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();

@@ -39,6 +39,10 @@ public class PRootManager {
         this.loaderBin = new File(binDir, "loader");
     }
 
+    public Context getContext() {
+        return context;
+    }
+
     public File getBinDir() {
         return binDir;
     }

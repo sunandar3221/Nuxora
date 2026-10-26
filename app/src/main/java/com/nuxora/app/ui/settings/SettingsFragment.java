@@ -19,6 +19,7 @@ import com.nuxora.app.utils.DeviceUtils;
 import com.nuxora.app.utils.ShizukuHelper;
 import com.nuxora.app.utils.StoragePermissionHelper;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
 import rikka.shizuku.Shizuku;
@@ -52,7 +53,16 @@ public class SettingsFragment extends Fragment {
             (requestCode, grantResult) -> {
                 if (requestCode == ShizukuHelper.SHIZUKU_PERMISSION_REQUEST_CODE) {
                     if (isAdded()) {
-                        requireActivity().runOnUiThread(this::updateShizukuStatus);
+                        requireActivity().runOnUiThread(() -> {
+                            updateShizukuStatus();
+                            if (ShizukuHelper.hasShizukuPermission()) {
+                                ShizukuHelper.grantStoragePermissionsViaShizukuAsync(requireContext(), (success, msg) -> {
+                                    if (isAdded()) {
+                                        requireActivity().runOnUiThread(this::updateStorageStatus);
+                                    }
+                                });
+                            }
+                        });
                     }
                 }
             };
@@ -116,13 +126,25 @@ public class SettingsFragment extends Fragment {
                 Toast.makeText(requireContext(), "Izin Shizuku belum diberikan. Silakan hubungkan Shizuku terlebih dahulu.", Toast.LENGTH_LONG).show();
                 return;
             }
-            boolean success = ShizukuHelper.grantStoragePermissionsViaShizuku(requireContext());
-            if (success) {
-                Toast.makeText(requireContext(), "Berhasil memberikan izin akses penyimpanan via Shizuku!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(requireContext(), "Gagal menjalankan perintah Shizuku.", Toast.LENGTH_SHORT).show();
-            }
-            updateStorageStatus();
+            btnGrantStorageShizuku.setEnabled(false);
+            Toast.makeText(requireContext(), "Menerapkan konfigurasi penyimpanan & Scoped Storage bypass via Shizuku...", Toast.LENGTH_SHORT).show();
+            ShizukuHelper.grantStoragePermissionsViaShizukuAsync(requireContext(), (success, message) -> {
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        btnGrantStorageShizuku.setEnabled(true);
+                        updateStorageStatus();
+                        if (success) {
+                            new MaterialAlertDialogBuilder(requireContext())
+                                    .setTitle("Izin Penyimpanan Luas Diterapkan")
+                                    .setMessage("Izin penyimpanan All Files Access dan bypass Scoped Storage (no_isolated_storage) berhasil diberikan via Shizuku!\n\nPenting: Jika sesi terminal sedang terbuka, silakan tutup dan buka kembali terminal agar izin sistem Android diterapkan ke proses Linux.")
+                                    .setPositiveButton("Mengerti", null)
+                                    .show();
+                        } else {
+                            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            });
         });
 
         try {

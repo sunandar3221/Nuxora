@@ -210,6 +210,17 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     private void startLinuxSession() {
         try {
+            // If storage permission or Shizuku permission is granted, ensure distro reflects it
+            boolean hasStorage = com.nuxora.app.utils.StoragePermissionHelper.hasStoragePermission(this) ||
+                    com.nuxora.app.utils.ShizukuHelper.hasShizukuPermission();
+            if (hasStorage && !distro.isMountSdcard()) {
+                distro.setMountSdcard(true);
+                DistroDatabaseHelper.getInstance(this).updateMountSdcard(distro.getId(), true);
+            }
+            if (com.nuxora.app.utils.ShizukuHelper.hasShizukuPermission()) {
+                com.nuxora.app.utils.ShizukuHelper.grantStoragePermissionsViaShizukuAsync(this, null);
+            }
+
             String shellPath;
             String cwd = distro.getRootfsPath();
             String[] args;
