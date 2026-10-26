@@ -60,7 +60,7 @@ Aplikasi mendukung 4 arsitektur prosesor utama:
 
 ### Perintah Build:
 ```bash
-git clone https://github.com/wellkops/AnLinux.git Nuxora
+git clone https://github.com/wellkops/Nuxora.git
 cd Nuxora
 ./gradlew assembleDebug
 ```
@@ -70,7 +70,7 @@ File APK hasil build akan berada di `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## 📥 Unduh APK
 
-Unduh versi rilis `.apk` terbaru langsung dari halaman [Releases](https://github.com/wellkops/AnLinux/releases).
+Unduh versi rilis `.apk` terbaru langsung dari halaman [Releases](https://github.com/wellkops/Nuxora/releases).
 
 Pasang via terminal ADB:
 ```bash
