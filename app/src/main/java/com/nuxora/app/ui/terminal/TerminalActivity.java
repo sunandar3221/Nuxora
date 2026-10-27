@@ -42,12 +42,14 @@ import com.nuxora.app.service.LinuxService;
 import com.nuxora.app.ui.MainActivity;
 import com.nuxora.app.utils.ShizukuHelper;
 import com.nuxora.app.utils.StoragePermissionHelper;
+import com.termux.terminal.TerminalEmulator;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -135,7 +137,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
         if (distro == null) {
             Toast.makeText(this, "Tidak ada distro Linux yang terpasang.", Toast.LENGTH_SHORT).show();
-            finish();
+            navigateToHomeAndFinish();
             return;
         }
 
@@ -248,29 +250,75 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     private void navigateToHome() {
         Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(intent);
+    }
+
+    private void navigateToHomeAndFinish() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
     }
 
     private void resetCurrentTerminal() {
         if (terminalSession != null && terminalSession.getEmulator() != null) {
-            terminalSession.reset();
-            Toast.makeText(this, R.string.terminal_cleared, Toast.LENGTH_SHORT).show();
+            try {
+                TerminalEmulator emulator = terminalSession.getEmulator();
+
+                // 1. Reset terminal emulator state
+                terminalSession.reset();
+
+                // 2. Clear scrollback transcript history
+                if (emulator.getScreen() != null) {
+                    emulator.getScreen().clearTranscript();
+                }
+                emulator.clearScrollCounter();
+
+                // 3. Send ANSI clear screen sequence (Cursor Home + Clear Screen + Clear Scrollback)
+                byte[] clearSequence = "\033[H\033[2J\033[3J".getBytes(StandardCharsets.UTF_8);
+                emulator.append(clearSequence, clearSequence.length);
+
+                // 4. Send Form Feed (Ctrl+L, ASCII 12) to shell so readline/sh repaints prompt at the top
+                if (terminalSession.isRunning()) {
+                    terminalSession.write(new byte[]{12}, 0, 1);
+                }
+
+                // 5. Reset TerminalView scroll position and refresh display
+                if (terminalView != null) {
+                    terminalView.setTopRow(0);
+                    terminalView.onScreenUpdated();
+                }
+
+                Toast.makeText(this, R.string.terminal_cleared, Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Log.e(TAG, "Gagal membersihkan terminal", e);
+            }
         }
     }
 
     private void showExitConfirmationDialog() {
-        new MaterialAlertDialogBuilder(this)
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
                 .setTitle("Sesi Terminal Linux")
                 .setMessage("Apakah Anda ingin kembali ke beranda dan membiarkan Linux tetap berjalan di latar belakang, atau menghentikan sesi?")
                 .setPositiveButton("Latar Belakang", (dialog, which) -> {
                     navigateToHome();
-                })
-                .setNegativeButton("Hentikan Sesi Ini", (dialog, which) -> {
-                    closeSession(currentSessionIndex);
-                })
-                .setNeutralButton("Batal", null)
-                .show();
+                });
+
+        if (activeSessions.size() > 1) {
+            builder.setNegativeButton("Hentikan Sesi Ini", (dialog, which) -> {
+                closeSession(currentSessionIndex);
+            });
+            builder.setNeutralButton("Hentikan Semua Sesi", (dialog, which) -> {
+                closeAllSessions();
+            });
+        } else {
+            builder.setNegativeButton("Hentikan Sesi", (dialog, which) -> {
+                closeSession(currentSessionIndex);
+            });
+            builder.setNeutralButton("Batal", null);
+        }
+        builder.show();
     }
 
     private void setupKeyToolbar() {
@@ -472,6 +520,23 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
         });
     }
 
+    private void closeAllSessions() {
+        for (SessionTab tab : new ArrayList<>(activeSessions)) {
+            if (tab.session != null) {
+                tab.session.finishIfRunning();
+            }
+            if (tab.distro != null) {
+                if (tab.distro.getExecutionMode() == ExecutionMode.ROOT) {
+                    new ChrootManager(this).stopChroot(tab.distro);
+                }
+                DistroDatabaseHelper.getInstance(this).updateRunningStatus(tab.distro.getId(), false);
+            }
+        }
+        activeSessions.clear();
+        LinuxService.stopTerminal(this);
+        navigateToHomeAndFinish();
+    }
+
     private void closeSession(int index) {
         if (index < 0 || index >= activeSessions.size()) return;
         SessionTab closing = activeSessions.get(index);
@@ -497,10 +562,12 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
         if (activeSessions.isEmpty()) {
             LinuxService.stopTerminal(this);
-            finish();
+            navigateToHomeAndFinish();
         } else {
             if (currentSessionIndex >= activeSessions.size()) {
                 currentSessionIndex = activeSessions.size() - 1;
+            } else if (index < currentSessionIndex) {
+                currentSessionIndex--;
             }
             switchToSession(currentSessionIndex);
         }
@@ -689,7 +756,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
                 Toast.makeText(this, "Sesi #" + finishedTab.id + " (" + finishedTab.distro.getName() + ") telah berakhir.", Toast.LENGTH_SHORT).show();
                 closeSession(finishedIndex);
             } else if (activeSessions.isEmpty()) {
-                finish();
+                navigateToHomeAndFinish();
             }
         });
     }
