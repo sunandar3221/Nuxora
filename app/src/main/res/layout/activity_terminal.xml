@@ -1,342 +1,716 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#0A0E14">
+    android:background="#0A0E14"
+    tools:openDrawer="start">
 
-    <!-- Terminal Top Bar -->
+    <!-- ==================== MAIN CONTENT ==================== -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="#161B22"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="6dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#0A0E14">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_terminal"
-            app:tint="#38BDF8" />
-
-        <TextView
-            android:id="@+id/tvTerminalTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Linux Terminal"
-            android:textColor="#F8FAFC"
-            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-            android:layout_marginStart="8dp"
-            android:singleLine="true" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnToggleKeyboard"
-            style="@style/Widget.Material3.Button.IconButton"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:contentDescription="Keyboard"
-            app:icon="@drawable/ic_keyboard"
-            app:iconTint="#94A3B8" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnClearTerminal"
-            style="@style/Widget.Material3.Button.IconButton"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:contentDescription="Reset"
-            app:icon="@drawable/ic_delete"
-            app:iconTint="#94A3B8" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCloseTerminal"
-            style="@style/Widget.Material3.Button.IconButton"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:contentDescription="Close"
-            app:icon="@drawable/ic_stop"
-            app:iconTint="#F87171" />
-    </LinearLayout>
-
-    <!-- Termux-style Terminal Emulator Screen -->
-    <com.termux.view.TerminalView
-        android:id="@+id/terminalView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:focusable="true"
-        android:focusableInTouchMode="true" />
-
-    <!-- Termux-style Extra Key Toolbar -->
-    <HorizontalScrollView
-        android:id="@+id/keyToolbarScrollView"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="#0D1117"
-        android:scrollbars="none"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
-
+        <!-- Terminal Top Bar -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#161B22"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp">
+            android:paddingStart="4dp"
+            android:paddingEnd="6dp">
 
-            <TextView
-                android:id="@+id/keyEsc"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="46dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="ESC"
-                android:textColor="#F0F6FC"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
+            <!-- Drawer Toggle Button (Hamburger) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenDrawer"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:contentDescription="Buka Panel Sesi"
+                app:icon="@drawable/ic_menu"
+                app:iconTint="#38BDF8" />
 
-            <TextView
-                android:id="@+id/keyTab"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="46dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="TAB"
-                android:textColor="#F0F6FC"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
+            <!-- Return to Home Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnHome"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:contentDescription="Kembali ke Beranda"
+                app:icon="@drawable/ic_home"
+                app:iconTint="#94A3B8" />
 
+            <!-- Terminal Title -->
             <TextView
-                android:id="@+id/keyCtrl"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="48dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="CTRL"
-                android:textColor="#F0F6FC"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
+                android:id="@+id/tvTerminalTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Linux Terminal"
+                android:textColor="#F8FAFC"
+                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                android:layout_marginStart="4dp"
+                android:singleLine="true"
+                android:ellipsize="middle" />
 
-            <TextView
-                android:id="@+id/keyAlt"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="46dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="ALT"
-                android:textColor="#F0F6FC"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
+            <!-- Soft Keyboard Toggle -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleKeyboard"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:contentDescription="Keyboard"
+                app:icon="@drawable/ic_keyboard"
+                app:iconTint="#94A3B8" />
 
-            <TextView
-                android:id="@+id/keyUp"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="▲"
-                android:textColor="#F0F6FC"
-                android:textSize="13sp"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
+            <!-- Reset / Clear Screen -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnClearTerminal"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:contentDescription="Reset"
+                app:icon="@drawable/ic_delete"
+                app:iconTint="#94A3B8" />
 
-            <TextView
-                android:id="@+id/keyDown"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="▼"
-                android:textColor="#F0F6FC"
-                android:textSize="13sp"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keyLeft"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="◀"
-                android:textColor="#F0F6FC"
-                android:textSize="13sp"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keyRight"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="▶"
-                android:textColor="#F0F6FC"
-                android:textSize="13sp"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keyCtrlC"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="54dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="Ctrl+C"
-                android:textColor="#F0F6FC"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keyCtrlD"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="54dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="Ctrl+D"
-                android:textColor="#F0F6FC"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keySlash"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="/"
-                android:textColor="#F0F6FC"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keyMinus"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="-"
-                android:textColor="#F0F6FC"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keyPipe"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="|"
-                android:textColor="#F0F6FC"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/keyTilde"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:minWidth="42dp"
-                android:gravity="center"
-                android:background="@drawable/bg_terminal_key"
-                android:text="~"
-                android:textColor="#F0F6FC"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
-                android:layout_marginEnd="6dp"
-                android:clickable="true"
-                android:focusable="true" />
+            <!-- Close Session Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCloseTerminal"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:contentDescription="Close"
+                app:icon="@drawable/ic_stop"
+                app:iconTint="#F87171" />
         </LinearLayout>
-    </HorizontalScrollView>
 
-</LinearLayout>
+        <!-- Termux-style Terminal Emulator Screen -->
+        <com.termux.view.TerminalView
+            android:id="@+id/terminalView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
+
+        <!-- Termux-style Extra Key Toolbar -->
+        <HorizontalScrollView
+            android:id="@+id/keyToolbarScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#0D1117"
+            android:scrollbars="none"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
+
+                <TextView
+                    android:id="@+id/keyEsc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="46dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="ESC"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyTab"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="46dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="TAB"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyCtrl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="48dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="CTRL"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyAlt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="46dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="ALT"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyUp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="40dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="▲"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyDown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="40dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="▼"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyLeft"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="40dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="◀"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyRight"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="40dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="▶"
+                    android:textColor="#F0F6FC"
+                    android:textSize="12sp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyCtrlC"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="50dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="Ctrl+C"
+                    android:textColor="#F87171"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyCtrlD"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="50dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="Ctrl+D"
+                    android:textColor="#F87171"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keySlash"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="42dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="/"
+                    android:textColor="#F0F6FC"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyMinus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="42dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="-"
+                    android:textColor="#F0F6FC"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyPipe"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="42dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="|"
+                    android:textColor="#F0F6FC"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/keyTilde"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="42dp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_terminal_key"
+                    android:text="~"
+                    android:textColor="#F0F6FC"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:layout_marginEnd="6dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- ==================== TERMUX-STYLE LEFT DRAWER ==================== -->
+    <LinearLayout
+        android:id="@+id/drawerContent"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:orientation="vertical"
+        android:background="#161B22"
+        android:clickable="true"
+        android:focusable="true">
+
+        <!-- Drawer Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="12dp"
+            android:background="#0D1117">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:src="@drawable/ic_terminal"
+                app:tint="#38BDF8" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nuxora Terminal"
+                    android:textColor="#F8FAFC"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDrawerSessionCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1 sesi aktif"
+                    android:textColor="#38BDF8"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCloseDrawer"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:contentDescription="Tutup Menu"
+                app:icon="@drawable/ic_close"
+                app:iconSize="18dp"
+                app:iconTint="#94A3B8" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#21262D" />
+
+        <!-- Drawer Scrollable Body -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="14dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Section: Sesi Terminal -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="SESI TERMINAL"
+                        android:textColor="#94A3B8"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.06" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDrawerNewSession"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:minHeight="30dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:text="+ Sesi Baru"
+                        android:textSize="11sp"
+                        android:textColor="#38BDF8"
+                        app:icon="@drawable/ic_add"
+                        app:iconSize="14dp"
+                        app:iconTint="#38BDF8" />
+                </LinearLayout>
+
+                <!-- Active Sessions Dynamic List -->
+                <LinearLayout
+                    android:id="@+id/llDrawerSessions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="16dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#21262D"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Section: Buka Distro Lain -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BUKA DISTRO TERPASANG"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.06"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Installed Distros Quick Open List -->
+                <LinearLayout
+                    android:id="@+id/llDrawerDistros"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="16dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#21262D"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Section: Pengaturan Terminal -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PENGATURAN TERMINAL"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.06"
+                    android:layout_marginBottom="10dp" />
+
+                <!-- Font Size Setting Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_terminal_key"
+                    android:padding="8dp"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_text_fields"
+                        app:tint="#94A3B8" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ukuran Teks"
+                        android:textColor="#F1F5F9"
+                        android:textSize="13sp"
+                        android:layout_marginStart="10dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFontDecrease"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:minWidth="32dp"
+                        android:padding="0dp"
+                        android:text="−"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvFontSizeDisplay"
+                        android:layout_width="48dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="13 sp"
+                        android:textColor="#38BDF8"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFontIncrease"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:minWidth="32dp"
+                        android:padding="0dp"
+                        android:text="+"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Key Toolbar Switch -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_terminal_key"
+                    android:padding="8dp"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_keyboard"
+                        app:tint="#94A3B8" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tombol Pintas (ESC/Ctrl)"
+                        android:textColor="#F1F5F9"
+                        android:textSize="13sp"
+                        android:layout_marginStart="10dp" />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchExtraKeys"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true" />
+                </LinearLayout>
+
+                <!-- Wakelock Switch -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_terminal_key"
+                    android:padding="8dp"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_shield"
+                        app:tint="#94A3B8" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Layar Tetap Menyala"
+                        android:textColor="#F1F5F9"
+                        android:textSize="13sp"
+                        android:layout_marginStart="10dp" />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchScreenWake"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false" />
+                </LinearLayout>
+
+                <!-- Clear Screen Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDrawerClearScreen"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="38dp"
+                    android:text="Reset / Bersihkan Layar"
+                    android:textSize="12sp"
+                    android:textColor="#CBD5E1"
+                    app:icon="@drawable/ic_delete"
+                    app:iconSize="16dp"
+                    app:iconTint="#94A3B8"
+                    android:layout_marginBottom="14dp" />
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#21262D" />
+
+        <!-- Drawer Footer (Home & Stop buttons) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:background="#0D1117">
+
+            <!-- Back to Home Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDrawerBackHome"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:text="Kembali ke Beranda"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#0F172A"
+                android:backgroundTint="#38BDF8"
+                app:icon="@drawable/ic_home"
+                app:iconTint="#0F172A"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Close All / Stop Service Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDrawerStopTerminal"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="Hentikan Sesi Terminal"
+                android:textSize="12sp"
+                android:textColor="#F87171"
+                app:strokeColor="#F87171"
+                app:icon="@drawable/ic_stop"
+                app:iconSize="16dp"
+                app:iconTint="#F87171" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>

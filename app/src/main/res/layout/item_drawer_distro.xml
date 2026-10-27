@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerDistroContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:layout_marginBottom="4dp"
+    android:background="@drawable/bg_terminal_key"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:src="@drawable/ic_distro_generic"
+        app:tint="#60A5FA" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="6dp">
+
+        <TextView
+            android:id="@+id/tvDrawerDistroName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Alpine Linux"
+            android:textColor="#E2E8F0"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/tvDrawerDistroDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PRoot"
+            android:textColor="#64748B"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOpenDrawerDistro"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:minHeight="32dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:text="Buka"
+        android:textSize="11sp"
+        android:textColor="#38BDF8"
+        app:icon="@drawable/ic_add"
+        app:iconSize="14dp"
+        app:iconTint="#38BDF8" />
+</LinearLayout>

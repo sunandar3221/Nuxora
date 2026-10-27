@@ -49,6 +49,7 @@
             android:name=".ui.terminal.TerminalActivity"
             android:exported="false"
             android:label="@string/terminal_title"
+            android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:parentActivityName=".ui.MainActivity" />
