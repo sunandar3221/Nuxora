@@ -4,7 +4,7 @@
 
 ### Run Linux on Android — Seamlessly, Privately, and Without Root
 
-[![Latest Release](https://img.shields.io/github/v/release/sunandar3221/Nuxora?color=blue&label=Latest%20Version)](https://github.com/sunandar3221/Nuxora/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/sunandar3221/Nuxora?color=blue&label=Latest%20Version&logo=github)](https://github.com/sunandar3221/Nuxora/releases/latest)
 [![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B-green.svg)](https://github.com/sunandar3221/Nuxora)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20ARMv7%20%7C%20x86__64-orange.svg)](https://github.com/sunandar3221/Nuxora)
