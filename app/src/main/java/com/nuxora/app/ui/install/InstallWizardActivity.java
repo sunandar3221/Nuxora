@@ -29,6 +29,7 @@ import com.nuxora.app.utils.DeviceUtils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
@@ -124,14 +125,37 @@ public class InstallWizardActivity extends AppCompatActivity {
 
         btnActionInstall.setOnClickListener(v -> {
             if (isInstallCompleted) {
-                Intent intent = new Intent(this, TerminalActivity.class);
-                intent.putExtra(TerminalActivity.EXTRA_DISTRO_ID, installedDistroId);
-                startActivity(intent);
-                finish();
+                checkStorageAndLaunchTerminal();
             } else {
                 startInstallation();
             }
         });
+    }
+
+    private void checkStorageAndLaunchTerminal() {
+        boolean hasPermission = com.nuxora.app.utils.StoragePermissionHelper.hasStoragePermission(this)
+                || com.nuxora.app.utils.ShizukuHelper.hasShizukuPermission();
+        if (switchMountSdcard.isChecked() && !hasPermission) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Izin Penyimpanan Dibutuhkan")
+                    .setMessage("Distro ini mengaktifkan 'Mount SD Card', tetapi izin akses penyimpanan belum diberikan. Folder /sdcard tidak dapat dibaca tanpa izin ini.")
+                    .setPositiveButton("Beri Izin", (dialog, which) -> {
+                        com.nuxora.app.utils.StoragePermissionHelper.requestStoragePermission(this);
+                    })
+                    .setNegativeButton("Buka Terminal Saja", (dialog, which) -> {
+                        openTerminalAndFinish();
+                    })
+                    .show();
+            return;
+        }
+        openTerminalAndFinish();
+    }
+
+    private void openTerminalAndFinish() {
+        Intent intent = new Intent(this, TerminalActivity.class);
+        intent.putExtra(TerminalActivity.EXTRA_DISTRO_ID, installedDistroId);
+        startActivity(intent);
+        finish();
     }
 
     private void selectMode(boolean prootSelected) {

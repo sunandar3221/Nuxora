@@ -280,14 +280,15 @@ public class ScriptGenerator {
                 com.nuxora.app.utils.StoragePermissionHelper.hasStoragePermission(context) ||
                 com.nuxora.app.utils.ShizukuHelper.hasShizukuPermission()
         );
-        boolean mountSdcard = distro.isMountSdcard() || hasStorage;
+        boolean mountSdcard = distro.isMountSdcard() && hasStorage;
 
-        // Ensure symlink /root/sdcard -> /sdcard exists when storage is active
+        // Ensure symlink /root/sdcard -> /sdcard exists ONLY when storage permission is active
         File rootDir = new File(rootfsDir, "root");
         if (!rootDir.exists()) {
             rootDir.mkdirs();
         }
         File rootSdcard = new File(rootDir, "sdcard");
+        File fsSdcard = new File(rootfsDir, "sdcard");
         if (mountSdcard) {
             try {
                 if (rootSdcard.exists()) {
@@ -299,6 +300,12 @@ public class ScriptGenerator {
             if (rootSdcard.exists()) {
                 rootSdcard.delete();
             }
+            if (fsSdcard.exists() && fsSdcard.isDirectory()) {
+                fsSdcard.delete();
+            }
+            try {
+                Runtime.getRuntime().exec(new String[]{"rm", "-rf", rootSdcard.getAbsolutePath()}).waitFor();
+            } catch (Exception ignored) {}
         }
 
         StringBuilder sb = new StringBuilder();
@@ -326,6 +333,7 @@ public class ScriptGenerator {
             sb.append("ln -s /sdcard \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
         } else {
             sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("rmdir \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
         }
 
         sb.append("# Clear any stale package manager locks\n");
