@@ -4,11 +4,12 @@
 
 ### Run Linux on Android — Seamlessly, Privately, and Without Root
 
-[![Latest Release](https://img.shields.io/github/v/release/wellkops/Nuxora?color=blue&label=Latest%20Version)](https://github.com/wellkops/Nuxora/releases/latest)
-[![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B-green.svg)](https://github.com/wellkops/Nuxora)
-[![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20ARMv7%20%7C%20x86__64-orange.svg)](https://github.com/wellkops/Nuxora)
+[![Latest Release](https://img.shields.io/github/v/release/sunandar3221/Nuxora?color=blue&label=Latest%20Version)](https://github.com/sunandar3221/Nuxora/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B-green.svg)](https://github.com/sunandar3221/Nuxora)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20ARMv7%20%7C%20x86__64-orange.svg)](https://github.com/sunandar3221/Nuxora)
 
-[**Download APK (v1.3.0)**](https://github.com/wellkops/Nuxora/releases/download/v1.3.0/Nuxora-v1.3.0.apk) • [**Semua Rilis**](https://github.com/wellkops/Nuxora/releases)
+[**Download APK (v1.4.3)**](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.3/Nuxora-v1.4.3.apk) • [**Semua Rilis**](https://github.com/sunandar3221/Nuxora/releases)
 
 ---
 
@@ -16,12 +17,9 @@
 
 ## 📖 Tentang Nuxora
 
-**Nuxora** adalah aplikasi Android canggih yang memungkinkan Anda menginstal dan menjalankan distribusi Linux lengkap (Ubuntu, Debian, Kali Linux, Alpine Linux, Arch Linux, Fedora, dan lainnya) langsung di perangkat Android Anda tanpa memerlukan akses **ROOT**.
+**Nuxora** adalah aplikasi Android open-source yang memungkinkan Anda menginstal dan menjalankan distribusi Linux lengkap (Ubuntu, Debian, Kali Linux, Alpine Linux, Arch Linux, Fedora, Void Linux, dan Manjaro) langsung di perangkat Android tanpa memerlukan akses **ROOT**.
 
-Mulai dari versi **v1.3.0**, Nuxora beralih ke arsitektur **Closed Source & Decoupled Container**:
-- File paket APK dibuat bersih, ringan, dan mandiri tanpa membundel binary sistem pihak ketiga.
-- Komponen backend (PRoot & Rootfs) diunduh secara dinamis saat instalasi distro pertama kali.
-- Terminal bawaan berbasis emulator Termux berkinerja tinggi dengan dukungan penuh aplikasi CLI (nano, vim, bash, top, neofetch, gcc, python, nodejs).
+Nuxora dirilis secara terbuka di bawah lisensi **GNU General Public License v3 (GPLv3)**.
 
 ---
 
@@ -29,41 +27,50 @@ Mulai dari versi **v1.3.0**, Nuxora beralih ke arsitektur **Closed Source & Deco
 
 - 🚀 **Tanpa Akses Root (PRoot)**: Jalankan distro Linux di Android 7.0 hingga Android 14+ dengan hak akses root tersimulasi secara penuh.
 - ⚡ **Dukungan Root Mode (Chroot)**: Untuk perangkat yang sudah di-root, tersedia mode Chroot native berkecepatan tinggi.
-- 🖥️ **Terminal Ala Termux**:
-  - Dukungan Pinch-to-Zoom (ubah ukuran teks terminal dengan cubitan jari).
-  - Tombol keyboard tambahan (ESC, TAB, CTRL, ALT, Tombol Panah).
-  - PTY native untuk menjalankan editor dan aplikasi CLI interaktif tanpa glitch.
+- 📱 **Sidebar Panel Ala Termux**:
+  - Geser dari kiri ke kanan untuk membuka drawer menu terminal.
+  - Buat dan beralih antarsesi distro dengan cepat (*multi-session*).
+  - Kelola sesi terminal aktif secara independen.
+- 🔍 **Terminal Fleksibel**:
+  - Tombol keyboard tambahan (ESC, TAB, CTRL, ALT, tombol panah, dll.).
+  - Tombol pembersih layar (*Clear Terminal*) lengkap dengan pembersihan buffer transcript.
+  - Pengaturan ukuran font langsung (Pinch-to-zoom atau melalui drawer).
+  - Navigasi kembali ke beranda aplikasi tanpa menghentikan proses Linux di latar belakang.
+- 📁 **Akses Penyimpanan Luas & Integrasi Shizuku**:
+  - Mount otomatis direktori `/sdcard` dengan proteksi izin penyimpanan.
+  - Integrasi Shizuku untuk melewati batasan Scoped Storage pada Android 11+.
 - 🔔 **Background Service & Notifikasi**: Sesi terminal dan proses instalasi tetap berjalan di latar belakang tanpa terbunuh oleh sistem Android.
-- 🛠️ **Distro Support Luas**: Ubuntu, Debian, Alpine Linux, Kali Linux, Arch Linux, Fedora, Void Linux, dan Manjaro.
-- 🌐 **Fix Package Manager Otomatis**: Dilengkapi konfigurasi otomatis untuk apt, dpkg, dan apk guna mengatasi error `dpkg unsafe-io`, `fchdir`, dan `Function not implemented`.
+- 🛠️ **Dukungan Distro Lengkap**: Ubuntu, Debian, Alpine Linux, Kali Linux, Arch Linux, Fedora, Void Linux, dan Manjaro.
 
 ---
 
 ## 📥 Unduh & Instalasi
 
-Unduh rilis APK terbaru langsung melalui tautan di bawah:
+Unduh rilis APK terbaru melalui GitHub Releases:
 
-| Berkas | Versi | Deskripsi | Tautan Unduh |
+| Berkas | Versi | Lisensi | Tautan Unduh |
 | :--- | :--- | :--- | :--- |
-| **Nuxora-v1.3.0.apk** | `1.3.0` | Versi Closed Source terbaru (Decoupled, Anti-GPL bundling) | [Download](https://github.com/wellkops/Nuxora/releases/download/v1.3.0/Nuxora-v1.3.0.apk) |
-| **Nuxora-v1.0.0.apk** | `1.0.0` (v1.3.0 Core) | Standalone release build | [Download](https://github.com/wellkops/Nuxora/releases/download/v1.3.0/Nuxora-v1.0.0.apk) |
+| **Nuxora-v1.4.3.apk** | `1.4.3` | GPLv3 | [Download v1.4.3](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.3/Nuxora-v1.4.3.apk) |
 
 ### Cara Pasang:
 1. Unduh file `.apk` di atas.
 2. Buka berkas APK di HP Android Anda dan izinkan instalasi dari sumber tidak dikenal (*Unknown Sources*).
-3. Buka **Nuxora**, pilih distro favorit Anda (misalnya Ubuntu atau Alpine), lalu klik **Pasang Distro**.
-4. Komponen backend akan disiapkan secara otomatis dan terminal siap digunakan!
+3. Buka **Nuxora**, pilih distro favorit Anda, lalu klik **Pasang Distro**.
+4. Sesi terminal siap digunakan!
 
 ---
 
-## 🛡️ Lisensi & Keterangan Hak Cipta
+## 🛡️ Lisensi & Keterangan Open Source
 
-- **Aplikasi Utama Nuxora**: Hak Cipta © Nuxora Team. Seluruh kode aplikasi Android, antarmuka, dan layanan latar belakang berlisensi **Proprietary / Closed Source**.
-- **Terminal View & Emulator Engine**: Berlisensi di bawah **Apache License 2.0** (Kredit: Termux Project).
-- **Backend Emulation (PRoot)**: Komponen emulasi diunduh secara independen pada saat runtime di bawah ketentuan lisensi **GNU General Public License v2 (GPL-2.0)**. Komponen source code PRoot upstream dapat diakses secara publik sesuai ketentuan GPL.
+Nuxora adalah proyek perangkat lunak bebas dan sumber terbuka (*Free and Open Source Software*):
+
+- **Nuxora Application**: Berlisensi di bawah **GNU General Public License v3.0 (GPLv3)**. Silakan baca file [LICENSE](LICENSE) untuk ketentuan lengkapnya.
+- **Terminal Emulator Component**: Diadaptasi dari proyek Termux berlisensi **Apache License 2.0**.
+- **Shizuku Integration**: Berlisensi di bawah **Apache License 2.0** (Kredit: Rikka / Shizuku Project).
+- **PRoot Backend**: Berlisensi di bawah **GNU General Public License v2.0+ (GPL-2.0-or-later)**.
 
 ---
 
 <div align="center">
-<sub>Dikembangkan dengan ❤️ untuk komunitas Linux & Android.</sub>
+<sub>Dikembangkan dengan ❤️ untuk komunitas Linux & Android Open Source.</sub>
 </div>
