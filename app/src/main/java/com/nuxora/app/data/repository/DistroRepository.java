@@ -84,12 +84,11 @@ public class DistroRepository {
         Distro fedora = new Distro(
                 "fedora",
                 "Fedora Linux",
-                "Rawhide/Cloud",
+                "Cloud Base",
                 "Distro dari Red Hat dengan teknologi Linux terbaru dan manajer paket DNF.",
                 R.drawable.ic_distro_generic
         );
         fedora.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Fedora/arm64/fedora-rootfs-arm64.tar.xz");
-        fedora.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Fedora/armhf/fedora-rootfs-armhf.tar.xz");
         fedora.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Fedora/amd64/fedora-rootfs-amd64.tar.xz");
         list.add(fedora);
 
@@ -97,14 +96,55 @@ public class DistroRepository {
         Distro opensuse = new Distro(
                 "opensuse",
                 "openSUSE Leap",
-                "Current",
+                "Leap 15.x",
                 "Distro tangguh enterprise dengan manajer paket Zypper dan YaST.",
                 R.drawable.ic_distro_generic
         );
-        opensuse.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/arm64/opensuse-rootfs-arm64.tar.xz");
-        opensuse.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/armhf/opensuse-rootfs-armhf.tar.xz");
-        opensuse.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/amd64/opensuse-rootfs-amd64.tar.xz");
+        opensuse.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/Leap/arm64/openSUSE-Leap-rootfs-arm64.tar.xz");
+        opensuse.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/Leap/armhf/openSUSE-Leap-rootfs-armhf.tar.xz");
+        opensuse.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/openSUSE/Leap/amd64/openSUSE-Leap-rootfs-amd64.tar.xz");
         list.add(opensuse);
+
+        // 8. Parrot OS
+        Distro parrot = new Distro(
+                "parrot",
+                "Parrot OS",
+                "Security 6",
+                "Distro keamanan berbasis Debian dengan perkakas cybersecurity, privasi, dan software development.",
+                R.drawable.ic_distro_generic
+        );
+        parrot.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Parrot/arm64/parrot-rootfs-arm64.tar.xz");
+        parrot.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Parrot/armhf/parrot-rootfs-armhf.tar.xz");
+        parrot.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Parrot/amd64/parrot-rootfs-amd64.tar.xz");
+        parrot.addRootfsUrl("i386", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Parrot/i386/parrot-rootfs-i386.tar.xz");
+        list.add(parrot);
+
+        // 9. Void Linux
+        Distro voidLinux = new Distro(
+                "void",
+                "Void Linux",
+                "Rolling (glibc)",
+                "Distro independen super cepat dengan manajer paket XBPS dan runit init system yang sangat hemat RAM.",
+                R.drawable.ic_distro_generic
+        );
+        voidLinux.setDefaultShell("/bin/sh");
+        voidLinux.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Void/arm64/void-arm64-ROOTFS-20250202.tar.xz");
+        voidLinux.addRootfsUrl("armhf", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Void/armhf/void-armhf-ROOTFS-20250202.tar.xz");
+        voidLinux.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Void/amd64/void-amd64-ROOTFS-20250202.tar.xz");
+        voidLinux.addRootfsUrl("i386", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/Void/i386/void-i386-ROOTFS-20250202.tar.xz");
+        list.add(voidLinux);
+
+        // 10. CentOS Stream
+        Distro centos = new Distro(
+                "centos",
+                "CentOS Stream",
+                "9 (Stream)",
+                "Distro platform upstream Red Hat Enterprise Linux (RHEL) untuk server dan enterprise workloads.",
+                R.drawable.ic_distro_generic
+        );
+        centos.addRootfsUrl("arm64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/CentOS_Stream/arm64/centos_stream-rootfs-arm64.tar.xz");
+        centos.addRootfsUrl("amd64", "https://raw.githubusercontent.com/EXALAB/Anlinux-Resources/master/Rootfs/CentOS_Stream/amd64/centos_stream-rootfs-amd64.tar.xz");
+        list.add(centos);
 
         return list;
     }

@@ -9,7 +9,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20ARMv7%20%7C%20x86__64-orange.svg)](https://github.com/sunandar3221/Nuxora)
 
-[**Download APK (v1.4.3)**](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.3/Nuxora-v1.4.3.apk) • [**Semua Rilis**](https://github.com/sunandar3221/Nuxora/releases)
+[**Download APK (v1.4.4)**](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.4/Nuxora-v1.4.4.apk) • [**Semua Rilis**](https://github.com/sunandar3221/Nuxora/releases)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## 📖 Tentang Nuxora
 
-**Nuxora** adalah aplikasi Android open-source yang memungkinkan Anda menginstal dan menjalankan distribusi Linux lengkap (Ubuntu, Debian, Kali Linux, Alpine Linux, Arch Linux, Fedora, Void Linux, dan Manjaro) langsung di perangkat Android tanpa memerlukan akses **ROOT**.
+**Nuxora** adalah aplikasi Android open-source yang memungkinkan Anda menginstal dan menjalankan distribusi Linux lengkap (Ubuntu, Debian, Kali Linux, Parrot OS, Alpine Linux, Arch Linux, Fedora, openSUSE, Void Linux, dan CentOS Stream) langsung di perangkat Android tanpa memerlukan akses **ROOT**.
 
 Nuxora dirilis secara terbuka di bawah lisensi **GNU General Public License v3 (GPLv3)**.
 
@@ -40,7 +40,7 @@ Nuxora dirilis secara terbuka di bawah lisensi **GNU General Public License v3 (
   - Mount otomatis direktori `/sdcard` dengan proteksi izin penyimpanan.
   - Integrasi Shizuku untuk melewati batasan Scoped Storage pada Android 11+.
 - 🔔 **Background Service & Notifikasi**: Sesi terminal dan proses instalasi tetap berjalan di latar belakang tanpa terbunuh oleh sistem Android.
-- 🛠️ **Dukungan Distro Lengkap**: Ubuntu, Debian, Alpine Linux, Kali Linux, Arch Linux, Fedora, Void Linux, dan Manjaro.
+- 🛠️ **Dukungan Distro Lengkap**: Ubuntu, Debian, Kali Linux, Parrot OS, Alpine Linux, Arch Linux, Fedora, openSUSE, Void Linux, dan CentOS Stream.
 
 ---
 
@@ -50,7 +50,7 @@ Unduh rilis APK terbaru melalui GitHub Releases:
 
 | Berkas | Versi | Lisensi | Tautan Unduh |
 | :--- | :--- | :--- | :--- |
-| **Nuxora-v1.4.3.apk** | `1.4.3` | GPLv3 | [Download v1.4.3](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.3/Nuxora-v1.4.3.apk) |
+| **Nuxora-v1.4.4.apk** | `1.4.4` | GPLv3 | [Download v1.4.4](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.4/Nuxora-v1.4.4.apk) |
 
 ### Cara Pasang:
 1. Unduh file `.apk` di atas.

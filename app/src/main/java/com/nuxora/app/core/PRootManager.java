@@ -21,8 +21,7 @@ public class PRootManager {
 
     private static final String[] PROOT_RELEASE_URL_BASES = new String[]{
             "https://github.com/sunandar3221/Nuxora/releases/latest/download/proot-",
-            "https://github.com/sunandar3221/Nuxora/releases/download/v1.4.3/proot-",
-            "https://github.com/sunandar3221/Nuxora/releases/download/v1.3.0/proot-"
+            "https://github.com/sunandar3221/Nuxora/releases/download/v1.4.3/proot-"
     };
 
     private final Context context;
