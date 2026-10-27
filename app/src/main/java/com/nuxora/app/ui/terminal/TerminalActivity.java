@@ -111,7 +111,6 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     private final List<SessionTab> activeSessions = new ArrayList<>();
     private int currentSessionIndex = 0;
-    private int sessionCounter = 0;
 
     // Current active session references
     private InstalledDistro distro;
@@ -362,6 +361,23 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     // ==================== Multi-Session Management ====================
 
+    private int getLowestAvailableSessionId() {
+        int candidate = 1;
+        while (true) {
+            boolean used = false;
+            for (SessionTab tab : activeSessions) {
+                if (tab.id == candidate) {
+                    used = true;
+                    break;
+                }
+            }
+            if (!used) {
+                return candidate;
+            }
+            candidate++;
+        }
+    }
+
     private void startNewSession(InstalledDistro targetDistro) {
         try {
             // If storage permission or Shizuku permission is granted, ensure distro reflects it
@@ -409,14 +425,16 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             }
 
             TerminalSession session = new TerminalSession(shellPath, cwd, args, env, 2000, this);
-            sessionCounter++;
-            SessionTab tab = new SessionTab(sessionCounter, targetDistro, session);
+            int newId = getLowestAvailableSessionId();
+            SessionTab tab = new SessionTab(newId, targetDistro, session);
             activeSessions.add(tab);
+            activeSessions.sort((a, b) -> Integer.compare(a.id, b.id));
 
             DistroDatabaseHelper.getInstance(this).updateRunningStatus(targetDistro.getId(), true);
             LinuxService.startTerminal(this, targetDistro.getId(), targetDistro.getName());
 
-            switchToSession(activeSessions.size() - 1);
+            int targetIndex = activeSessions.indexOf(tab);
+            switchToSession(targetIndex);
 
         } catch (Exception e) {
             Log.e(TAG, "Gagal memulai sesi Linux", e);
@@ -521,8 +539,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             return;
         }
         SessionTab current = activeSessions.get(currentSessionIndex);
-        String title = "[" + (currentSessionIndex + 1) + "/" + activeSessions.size() + "] "
-                + current.distro.getName() + " (" + current.distro.getExecutionMode().getDisplayName() + ")";
+        String title = "#" + current.id + " • " + current.distro.getName() + " (" + current.distro.getExecutionMode().getDisplayName() + ")";
         tvTerminalTitle.setText(title);
         tvDrawerSessionCount.setText(activeSessions.size() + " sesi aktif");
     }
@@ -651,8 +668,8 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     public void onTitleChanged(TerminalSession changedSession) {
         runOnUiThread(() -> {
             if (changedSession == terminalSession && changedSession.getTitle() != null && !changedSession.getTitle().isEmpty()) {
-                tvTerminalTitle.setText("[" + (currentSessionIndex + 1) + "/" + activeSessions.size() + "] "
-                        + distro.getName() + " - " + changedSession.getTitle());
+                SessionTab cur = activeSessions.get(currentSessionIndex);
+                tvTerminalTitle.setText("#" + cur.id + " • " + distro.getName() + " - " + changedSession.getTitle());
             }
         });
     }

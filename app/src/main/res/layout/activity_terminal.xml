@@ -56,7 +56,8 @@
                 android:textColor="#F8FAFC"
                 android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
                 android:layout_marginStart="4dp"
-                android:singleLine="true"
+                android:includeFontPadding="false"
+                android:maxLines="1"
                 android:ellipsize="middle" />
 
             <!-- Soft Keyboard Toggle -->
@@ -129,6 +130,7 @@
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -147,6 +149,7 @@
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -165,6 +168,7 @@
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -183,6 +187,7 @@
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -199,6 +204,7 @@
                     android:text="▲"
                     android:textColor="#F0F6FC"
                     android:textSize="12sp"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -215,6 +221,7 @@
                     android:text="▼"
                     android:textColor="#F0F6FC"
                     android:textSize="12sp"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -231,6 +238,7 @@
                     android:text="◀"
                     android:textColor="#F0F6FC"
                     android:textSize="12sp"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -247,6 +255,7 @@
                     android:text="▶"
                     android:textColor="#F0F6FC"
                     android:textSize="12sp"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -265,6 +274,7 @@
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -283,6 +293,7 @@
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:layout_marginEnd="6dp"
@@ -301,6 +312,7 @@
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
                     android:layout_marginEnd="6dp"
@@ -319,6 +331,7 @@
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
                     android:layout_marginEnd="6dp"
@@ -337,6 +350,7 @@
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
                     android:layout_marginEnd="6dp"
@@ -355,6 +369,7 @@
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
+                    android:includeFontPadding="false"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
                     android:layout_marginEnd="6dp"
@@ -384,7 +399,7 @@
             android:paddingStart="16dp"
             android:paddingEnd="12dp"
             android:paddingTop="16dp"
-            android:paddingBottom="12dp"
+            android:paddingBottom="14dp"
             android:background="#0D1117">
 
             <ImageView
@@ -398,6 +413,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="vertical"
+                android:gravity="center_vertical"
                 android:layout_marginStart="12dp">
 
                 <TextView
@@ -405,8 +421,9 @@
                     android:layout_height="wrap_content"
                     android:text="Nuxora Terminal"
                     android:textColor="#F8FAFC"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:includeFontPadding="false" />
 
                 <TextView
                     android:id="@+id/tvDrawerSessionCount"
@@ -414,7 +431,9 @@
                     android:layout_height="wrap_content"
                     android:text="1 sesi aktif"
                     android:textColor="#38BDF8"
-                    android:textSize="11sp" />
+                    android:textSize="11sp"
+                    android:includeFontPadding="false"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
@@ -422,6 +441,13 @@
                 style="@style/Widget.Material3.Button.IconButton"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
+                android:minWidth="36dp"
+                android:minHeight="36dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
+                android:padding="0dp"
                 android:contentDescription="Tutup Menu"
                 app:icon="@drawable/ic_close"
                 app:iconSize="18dp"
@@ -451,7 +477,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="10dp">
 
                     <TextView
                         android:layout_width="0dp"
@@ -461,21 +487,29 @@
                         android:textColor="#94A3B8"
                         android:textSize="11sp"
                         android:textStyle="bold"
-                        android:letterSpacing="0.06" />
+                        android:letterSpacing="0.06"
+                        android:includeFontPadding="false" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnDrawerNewSession"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
-                        android:layout_height="30dp"
-                        android:minHeight="30dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
+                        android:layout_height="32dp"
+                        android:minHeight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
                         android:text="+ Sesi Baru"
                         android:textSize="11sp"
                         android:textColor="#38BDF8"
                         app:icon="@drawable/ic_add"
                         app:iconSize="14dp"
+                        app:iconPadding="4dp"
                         app:iconTint="#38BDF8" />
                 </LinearLayout>
 
@@ -502,7 +536,8 @@
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:letterSpacing="0.06"
-                    android:layout_marginBottom="8dp" />
+                    android:includeFontPadding="false"
+                    android:layout_marginBottom="10dp" />
 
                 <!-- Installed Distros Quick Open List -->
                 <LinearLayout
@@ -527,16 +562,21 @@
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:letterSpacing="0.06"
+                    android:includeFontPadding="false"
                     android:layout_marginBottom="10dp" />
 
                 <!-- Font Size Setting Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:background="@drawable/bg_terminal_key"
-                    android:padding="8dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:layout_marginBottom="8dp">
 
                     <ImageView
@@ -552,6 +592,7 @@
                         android:text="Ukuran Teks"
                         android:textColor="#F1F5F9"
                         android:textSize="13sp"
+                        android:includeFontPadding="false"
                         android:layout_marginStart="10dp" />
 
                     <com.google.android.material.button.MaterialButton
@@ -559,10 +600,15 @@
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:minWidth="32dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
                         android:padding="0dp"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
                         android:text="−"
-                        android:textSize="15sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -570,6 +616,7 @@
                         android:layout_width="48dp"
                         android:layout_height="wrap_content"
                         android:gravity="center"
+                        android:includeFontPadding="false"
                         android:text="13 sp"
                         android:textColor="#38BDF8"
                         android:textSize="12sp"
@@ -580,10 +627,15 @@
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:minWidth="32dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
                         android:padding="0dp"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
                         android:text="+"
-                        android:textSize="15sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -591,10 +643,14 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:background="@drawable/bg_terminal_key"
-                    android:padding="8dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:layout_marginBottom="8dp">
 
                     <ImageView
@@ -610,6 +666,7 @@
                         android:text="Tombol Pintas (ESC/Ctrl)"
                         android:textColor="#F1F5F9"
                         android:textSize="13sp"
+                        android:includeFontPadding="false"
                         android:layout_marginStart="10dp" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -623,10 +680,14 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:background="@drawable/bg_terminal_key"
-                    android:padding="8dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
                     android:layout_marginBottom="8dp">
 
                     <ImageView
@@ -642,6 +703,7 @@
                         android:text="Layar Tetap Menyala"
                         android:textColor="#F1F5F9"
                         android:textSize="13sp"
+                        android:includeFontPadding="false"
                         android:layout_marginStart="10dp" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
@@ -656,12 +718,18 @@
                     android:id="@+id/btnDrawerClearScreen"
                     style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="match_parent"
-                    android:layout_height="38dp"
+                    android:layout_height="40dp"
+                    android:minHeight="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
                     android:text="Reset / Bersihkan Layar"
                     android:textSize="12sp"
                     android:textColor="#CBD5E1"
                     app:icon="@drawable/ic_delete"
                     app:iconSize="16dp"
+                    app:iconPadding="6dp"
                     app:iconTint="#94A3B8"
                     android:layout_marginBottom="14dp" />
 
@@ -687,26 +755,38 @@
                 style="@style/Widget.Material3.Button"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:gravity="center"
+                android:includeFontPadding="false"
                 android:text="Kembali ke Beranda"
                 android:textSize="13sp"
                 android:textStyle="bold"
                 android:textColor="#0F172A"
                 android:backgroundTint="#38BDF8"
                 app:icon="@drawable/ic_home"
+                app:iconPadding="8dp"
                 app:iconTint="#0F172A"
-                android:layout_marginBottom="6dp" />
+                android:layout_marginBottom="8dp" />
 
             <!-- Close All / Stop Service Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDrawerStopTerminal"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="42dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:gravity="center"
+                android:includeFontPadding="false"
                 android:text="Hentikan Sesi Terminal"
                 android:textSize="12sp"
                 android:textColor="#F87171"
                 app:strokeColor="#F87171"
                 app:icon="@drawable/ic_stop"
+                app:iconPadding="8dp"
                 app:iconSize="16dp"
                 app:iconTint="#F87171" />
         </LinearLayout>

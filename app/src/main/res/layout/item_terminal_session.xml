@@ -5,11 +5,12 @@
     android:id="@+id/sessionContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:minHeight="52dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:background="@drawable/bg_terminal_key"
     android:paddingStart="12dp"
-    android:paddingEnd="8dp"
+    android:paddingEnd="6dp"
     android:paddingTop="8dp"
     android:paddingBottom="8dp"
     android:layout_marginBottom="6dp"
@@ -28,6 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
+        android:gravity="center_vertical"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="6dp">
 
@@ -39,6 +41,7 @@
             android:textColor="#F8FAFC"
             android:textSize="13sp"
             android:textStyle="bold"
+            android:includeFontPadding="false"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -49,16 +52,26 @@
             android:text="PRoot • Sesi Aktif"
             android:textColor="#94A3B8"
             android:textSize="11sp"
+            android:includeFontPadding="false"
+            android:layout_marginTop="2dp"
             android:maxLines="1" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCloseSessionItem"
         style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:minWidth="36dp"
+        android:minHeight="36dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        android:padding="0dp"
         android:contentDescription="Tutup Sesi"
         app:icon="@drawable/ic_close"
         app:iconSize="16dp"
-        app:iconTint="#F87171" />
+        app:iconTint="#F87171"
+        app:iconGravity="textStart" />
 </LinearLayout>
