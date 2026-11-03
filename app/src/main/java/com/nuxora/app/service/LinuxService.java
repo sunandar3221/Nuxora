@@ -10,14 +10,23 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import com.nuxora.app.R;
+import com.nuxora.app.core.ChrootManager;
+import com.nuxora.app.data.database.DistroDatabaseHelper;
+import com.nuxora.app.data.model.ExecutionMode;
+import com.nuxora.app.data.model.InstalledDistro;
 import com.nuxora.app.ui.terminal.TerminalActivity;
 
+import java.util.List;
+
 public class LinuxService extends Service {
+
+    private static final String TAG = "NuxoraLinuxService";
 
     public static final String ACTION_START_TERMINAL = "com.nuxora.app.START_TERMINAL";
     public static final String ACTION_STOP_TERMINAL = "com.nuxora.app.STOP_TERMINAL";
@@ -116,11 +125,40 @@ public class LinuxService extends Service {
             }
 
             case ACTION_STOP_TERMINAL: {
+                Log.d(TAG, "Menerima ACTION_STOP_TERMINAL - Menghentikan sesi terminal");
                 isTerminalActive = false;
+
+                // 1. Matikan sesi terminal yang sedang berjalan di TerminalActivity
+                TerminalActivity.stopCurrentTerminal(this);
+
+                // 2. Bersihkan status database dan chroot mount
+                try {
+                    List<InstalledDistro> distros = DistroDatabaseHelper.getInstance(this).getAllInstalledDistros();
+                    ChrootManager chrootManager = new ChrootManager(this);
+                    for (InstalledDistro d : distros) {
+                        if (d.isRunning()) {
+                            if (d.getExecutionMode() == ExecutionMode.ROOT) {
+                                chrootManager.stopChroot(d);
+                            }
+                            DistroDatabaseHelper.getInstance(this).updateRunningStatus(d.getId(), false);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Gagal membersihkan status distro", e);
+                }
+
+                // 3. Batalkan notifikasi dan hentikan service jika tidak ada instalasi
                 if (notificationManager != null) {
                     notificationManager.cancel(NOTIF_ID_TERMINAL);
                 }
+                stopForeground(true);
+                releaseWakeLock();
                 checkStopSelf();
+
+                // 4. Kirim siaran bahwa terminal telah dihentikan
+                Intent stoppedIntent = new Intent(ACTION_STOP_TERMINAL);
+                stoppedIntent.setPackage(getPackageName());
+                sendBroadcast(stoppedIntent);
                 break;
             }
 

@@ -9,7 +9,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20ARMv7%20%7C%20x86__64-orange.svg)](https://github.com/sunandar3221/Nuxora)
 
-[**Download APK (v1.4.4)**](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.4/Nuxora-v1.4.4.apk) • [**Semua Rilis**](https://github.com/sunandar3221/Nuxora/releases)
+[**Download Signed APK (v1.4.5)**](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.5/Nuxora-v1.4.5-signed.apk) • [**Semua Rilis**](https://github.com/sunandar3221/Nuxora/releases)
 
 ---
 
@@ -48,9 +48,10 @@ Nuxora dirilis secara terbuka di bawah lisensi **GNU General Public License v3 (
 
 Unduh rilis APK terbaru melalui GitHub Releases:
 
-| Berkas | Versi | Lisensi | Tautan Unduh |
-| :--- | :--- | :--- | :--- |
-| **Nuxora-v1.4.4.apk** | `1.4.4` | GPLv3 | [Download v1.4.4](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.4/Nuxora-v1.4.4.apk) |
+| Berkas | Versi | Status | Lisensi | Tautan Unduh |
+| :--- | :--- | :--- | :--- | :--- |
+| **Nuxora-v1.4.5-signed.apk** | `1.4.5` | Signed (Siap Pasang) | GPLv3 | [Download Signed APK](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.5/Nuxora-v1.4.5-signed.apk) |
+| **Nuxora-v1.4.5-unsigned.apk** | `1.4.5` | Unsigned | GPLv3 | [Download Unsigned APK](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.5/Nuxora-v1.4.5-unsigned.apk) |
 
 ### Cara Pasang:
 1. Unduh file `.apk` di atas.
@@ -68,6 +69,13 @@ Nuxora adalah proyek perangkat lunak bebas dan sumber terbuka (*Free and Open So
 - **Terminal Emulator Component**: Diadaptasi dari proyek Termux berlisensi **Apache License 2.0**.
 - **Shizuku Integration**: Berlisensi di bawah **Apache License 2.0** (Kredit: Rikka / Shizuku Project).
 - **PRoot Backend**: Berlisensi di bawah **GNU General Public License v2.0+ (GPL-2.0-or-later)**.
+
+---
+
+## 👥 Pengembang / Credits
+
+- **sunandar3221** ([GitHub](https://github.com/sunandar3221))
+- **wellkops** ([GitHub](https://github.com/wellkops))
 
 ---
 

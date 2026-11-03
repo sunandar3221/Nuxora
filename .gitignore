@@ -11,3 +11,7 @@
 local.properties
 *.apk
 *.aab
+*.keystore
+*.pem
+Nuxora-*.txt
+*.idsig

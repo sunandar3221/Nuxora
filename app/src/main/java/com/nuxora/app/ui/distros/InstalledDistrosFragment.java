@@ -1,7 +1,11 @@
 package com.nuxora.app.ui.distros;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +41,13 @@ public class InstalledDistrosFragment extends Fragment implements InstalledDistr
     private LinearLayout emptyStateLayout;
     private ExtendedFloatingActionButton fabAddDistro;
     private MaterialButton btnExploreCatalog;
+
+    private final BroadcastReceiver stopReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            loadDistros();
+        }
+    };
     private InstalledDistrosAdapter adapter;
     private final List<InstalledDistro> distrosList = new ArrayList<>();
     private DistroDatabaseHelper dbHelper;
@@ -69,6 +80,27 @@ public class InstalledDistrosFragment extends Fragment implements InstalledDistr
 
         loadDistros();
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        try {
+            IntentFilter filter = new IntentFilter(LinuxService.ACTION_STOP_TERMINAL);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireContext().registerReceiver(stopReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                requireContext().registerReceiver(stopReceiver, filter);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        try {
+            requireContext().unregisterReceiver(stopReceiver);
+        } catch (Exception ignored) {}
     }
 
     @Override

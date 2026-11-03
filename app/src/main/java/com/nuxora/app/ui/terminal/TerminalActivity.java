@@ -114,6 +114,16 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     private final List<SessionTab> activeSessions = new ArrayList<>();
     private int currentSessionIndex = 0;
 
+    // Singleton reference for external management (e.g. LinuxService stop action)
+    private static java.lang.ref.WeakReference<TerminalActivity> sInstance;
+
+    public static void stopCurrentTerminal(Context context) {
+        TerminalActivity activity = sInstance != null ? sInstance.get() : null;
+        if (activity != null && !activity.isFinishing()) {
+            activity.runOnUiThread(() -> activity.closeAllSessions(false));
+        }
+    }
+
     // Current active session references
     private InstalledDistro distro;
     private TerminalSession terminalSession;
@@ -121,6 +131,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sInstance = new java.lang.ref.WeakReference<>(this);
         setContentView(R.layout.activity_terminal);
 
         long distroId = getIntent().getLongExtra(EXTRA_DISTRO_ID, -1);
@@ -521,6 +532,19 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     }
 
     private void closeAllSessions() {
+        closeAllSessions(true);
+    }
+
+    public void closeAllSessions(boolean returnToHome) {
+        if (activeSessions.isEmpty()) {
+            if (returnToHome || isTaskRoot()) {
+                navigateToHomeAndFinish();
+            } else {
+                finish();
+            }
+            return;
+        }
+
         for (SessionTab tab : new ArrayList<>(activeSessions)) {
             if (tab.session != null) {
                 tab.session.finishIfRunning();
@@ -534,7 +558,11 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
         }
         activeSessions.clear();
         LinuxService.stopTerminal(this);
-        navigateToHomeAndFinish();
+        if (returnToHome || isTaskRoot()) {
+            navigateToHomeAndFinish();
+        } else {
+            finish();
+        }
     }
 
     private void closeSession(int index) {
@@ -705,6 +733,9 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (sInstance != null && sInstance.get() == this) {
+            sInstance = null;
+        }
         if (isFinishing()) {
             for (SessionTab tab : activeSessions) {
                 if (tab.session != null) {

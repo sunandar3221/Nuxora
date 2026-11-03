@@ -1,8 +1,10 @@
 package com.nuxora.app.ui.settings;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,10 +16,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.nuxora.app.BuildConfig;
 import com.nuxora.app.R;
 import com.nuxora.app.utils.DeviceUtils;
 import com.nuxora.app.utils.ShizukuHelper;
 import com.nuxora.app.utils.StoragePermissionHelper;
+import com.nuxora.app.utils.UpdateChecker;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
@@ -146,6 +150,122 @@ public class SettingsFragment extends Fragment {
                 }
             });
         });
+
+        // About, Developers, License, Repo & Update Checker
+        TextView tvAppVersion = view.findViewById(R.id.tvAppVersion);
+        MaterialButton btnViewLicense = view.findViewById(R.id.btnViewLicense);
+        MaterialButton btnOpenRepo = view.findViewById(R.id.btnOpenRepo);
+        TextView tvUpdateStatus = view.findViewById(R.id.tvUpdateStatus);
+        MaterialButton btnCheckUpdate = view.findViewById(R.id.btnCheckUpdate);
+
+        if (tvAppVersion != null) {
+            tvAppVersion.setText("Versi " + BuildConfig.VERSION_NAME + " (Material You)");
+        }
+
+        if (btnViewLicense != null) {
+            btnViewLicense.setOnClickListener(v -> {
+                new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Lisensi GNU General Public License v3")
+                        .setMessage("Nuxora adalah Perangkat Lunak Bebas dan Sumber Terbuka (FOSS) di bawah lisensi GNU GPLv3.\n\n" +
+                                "Hak Pengguna:\n" +
+                                "• Bebas menjalankan aplikasi untuk tujuan apa pun.\n" +
+                                "• Bebas mempelajari dan memodifikasi kode sumber.\n" +
+                                "• Bebas mendistribusikan salinan kode sumber dan rilis aplikasi.\n\n" +
+                                "Kredit Komponen:\n" +
+                                "• Termux Terminal View & Emulator (Apache 2.0)\n" +
+                                "• Shizuku API (Apache 2.0)\n" +
+                                "• PRoot Backend Emulation (GPL-2.0+)\n\n" +
+                                "Hak Cipta © Nuxora Contributors (sunandar3221 & wellkops).")
+                        .setPositiveButton("Baca Teks Lisensi Lengkap", (dialog, which) -> {
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.gnu.org/licenses/gpl-3.0.html"));
+                                startActivity(intent);
+                            } catch (Exception ignored) {}
+                        })
+                        .setNegativeButton("Tutup", null)
+                        .show();
+            });
+        }
+
+        if (btnOpenRepo != null) {
+            btnOpenRepo.setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/sunandar3221/Nuxora"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), "Gagal membuka browser: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (btnCheckUpdate != null) {
+            btnCheckUpdate.setOnClickListener(v -> {
+                btnCheckUpdate.setEnabled(false);
+                btnCheckUpdate.setText("Memeriksa Pembaruan...");
+                if (tvUpdateStatus != null) {
+                    tvUpdateStatus.setText("Menghubungi server GitHub API...");
+                }
+
+                UpdateChecker.check(requireContext(), new UpdateChecker.UpdateCallback() {
+                    @Override
+                    public void onUpdateAvailable(UpdateChecker.ReleaseInfo release) {
+                        if (!isAdded()) return;
+                        btnCheckUpdate.setEnabled(true);
+                        btnCheckUpdate.setText("Periksa Pembaruan Aplikasi");
+                        if (tvUpdateStatus != null) {
+                            tvUpdateStatus.setText("Versi baru tersedia: " + release.tagName);
+                        }
+
+                        new MaterialAlertDialogBuilder(requireContext())
+                                .setTitle("Pembaruan Tersedia: " + release.tagName)
+                                .setMessage("Versi baru Nuxora telah dirilis di GitHub!\n\n" +
+                                        "Versi Terpasang: v" + BuildConfig.VERSION_NAME + "\n" +
+                                        "Versi Terbaru: " + release.tagName + "\n\n" +
+                                        "Catatan Rilis:\n" + (release.body.isEmpty() ? "Tidak ada catatan rilis." : release.body))
+                                .setPositiveButton("Unduh Pembaruan", (dialog, which) -> {
+                                    try {
+                                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(release.downloadUrl));
+                                        startActivity(intent);
+                                    } catch (Exception ignored) {}
+                                })
+                                .setNeutralButton("Halaman Rilis GitHub", (dialog, which) -> {
+                                    try {
+                                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(release.htmlUrl));
+                                        startActivity(intent);
+                                    } catch (Exception ignored) {}
+                                })
+                                .setNegativeButton("Nanti", null)
+                                .show();
+                    }
+
+                    @Override
+                    public void onAlreadyLatest(String currentVersion) {
+                        if (!isAdded()) return;
+                        btnCheckUpdate.setEnabled(true);
+                        btnCheckUpdate.setText("Periksa Pembaruan Aplikasi");
+                        if (tvUpdateStatus != null) {
+                            tvUpdateStatus.setText("Aplikasi sudah menggunakan versi terbaru (v" + currentVersion + ").");
+                        }
+                        new MaterialAlertDialogBuilder(requireContext())
+                                .setTitle("Versi Terbaru")
+                                .setMessage("Anda sudah menggunakan versi terbaru Nuxora (v" + currentVersion + "). Tidak ada pembaruan baru saat ini.")
+                                .setPositiveButton("OK", null)
+                                .show();
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        if (!isAdded()) return;
+                        btnCheckUpdate.setEnabled(true);
+                        btnCheckUpdate.setText("Periksa Pembaruan Aplikasi");
+                        if (tvUpdateStatus != null) {
+                            tvUpdateStatus.setText("Gagal memeriksa pembaruan.");
+                        }
+                        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+        }
 
         try {
             Shizuku.addBinderReceivedListenerSticky(onBinderReceivedListener);
