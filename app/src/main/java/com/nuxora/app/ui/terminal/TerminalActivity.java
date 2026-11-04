@@ -537,7 +537,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     public void closeAllSessions(boolean returnToHome) {
         if (activeSessions.isEmpty()) {
-            if (returnToHome || isTaskRoot()) {
+            if (returnToHome) {
                 navigateToHomeAndFinish();
             } else {
                 finish();
@@ -558,7 +558,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
         }
         activeSessions.clear();
         LinuxService.stopTerminal(this);
-        if (returnToHome || isTaskRoot()) {
+        if (returnToHome) {
             navigateToHomeAndFinish();
         } else {
             finish();

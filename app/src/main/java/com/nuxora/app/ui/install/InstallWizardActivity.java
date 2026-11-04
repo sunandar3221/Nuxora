@@ -34,9 +34,11 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -279,19 +281,26 @@ public class InstallWizardActivity extends AppCompatActivity {
             ScriptGenerator.setupDns(targetRootfsDir);
             log("DNS resolv.conf disetel ke Google & Cloudflare DNS.");
             ScriptGenerator.setupPackageManagerFixes(targetRootfsDir);
-            ScriptGenerator.setupExtrasScript(targetRootfsDir, installExtras);
+            ScriptGenerator.setupExtrasScript(targetRootfsDir, true);
+
+            // 5. Run extras installation if selected (BEFORE entering terminal!)
             if (installExtras) {
-                log("Paket penting (nano, curl, bash, sudo) diatur untuk dipasang otomatis saat sesi pertama.");
+                setStatus("Memasang paket penting (extras)...");
+                LinuxService.updateInstallProgress(this, distroDisplayName, "Memasang paket penting (extras)…", 97, true);
+                log("\n--- Menjalankan Pemasangan Paket Penting (Extras) ---");
+                log("Memasang perkakas dasar (nano, curl, wget, sudo, ca-certificates)...");
+                runExtrasInstallation(executionMode, targetRootfsDir);
+                log("--- Pemasangan Paket Penting Selesai! ---\n");
             } else {
-                log("Skrip paket tambahan siap di /usr/local/bin/install-extras");
+                log("Paket penting dilewati. Anda dapat memasangnya kapan saja di terminal dengan: /usr/local/bin/install-extras");
             }
 
-            // 5. Clean downloaded archive cache
+            // 6. Clean downloaded archive cache
             if (archiveFile.exists()) {
                 archiveFile.delete();
             }
 
-            // 6. Save to Database
+            // 7. Save to Database
             InstalledDistro installed = new InstalledDistro(
                     distroDisplayName,
                     distro.getId(),
@@ -327,6 +336,46 @@ public class InstallWizardActivity extends AppCompatActivity {
             });
         } finally {
             LinuxService.stopInstall(this);
+        }
+    }
+
+    private void runExtrasInstallation(ExecutionMode mode, File rootfsDir) {
+        File execScript = null;
+        try {
+            Process process;
+            if (mode == ExecutionMode.ROOT) {
+                File binDir = new File(getFilesDir(), "bin");
+                if (!binDir.exists()) binDir.mkdirs();
+                execScript = ScriptGenerator.createChrootCommandScript(binDir, rootfsDir, "/usr/local/bin/install-extras");
+                ProcessBuilder pb = new ProcessBuilder("su", "-c", "/system/bin/sh " + execScript.getAbsolutePath());
+                pb.redirectErrorStream(true);
+                process = pb.start();
+            } else {
+                PRootManager prootManager = new PRootManager(this);
+                execScript = ScriptGenerator.createProotCommandScript(prootManager, rootfsDir, "/usr/local/bin/install-extras");
+                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", execScript.getAbsolutePath());
+                pb.redirectErrorStream(true);
+                process = pb.start();
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log(line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                log("[Pemberitahuan] Skrip paket selesai dengan status: " + exitCode);
+            }
+        } catch (Exception e) {
+            log("[Peringatan] Kendala saat memasang paket penting: " + e.getMessage());
+            log("Anda tetap dapat memasangnya secara manual nanti di terminal dengan: /usr/local/bin/install-extras");
+        } finally {
+            if (execScript != null && execScript.exists()) {
+                execScript.delete();
+            }
         }
     }
 

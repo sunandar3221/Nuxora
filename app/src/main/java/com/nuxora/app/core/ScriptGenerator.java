@@ -39,6 +39,13 @@ public class ScriptGenerator {
     public static void setupPackageManagerFixes(File rootfsDir) {
         setupDns(rootfsDir);
 
+        File hostsFile = new File(rootfsDir, "etc/hosts");
+        if (!hostsFile.exists() || hostsFile.length() == 0) {
+            try (FileOutputStream fos = new FileOutputStream(hostsFile)) {
+                fos.write("127.0.0.1 localhost\n::1 localhost\n".getBytes(StandardCharsets.UTF_8));
+            } catch (IOException ignored) {}
+        }
+
         try {
             // 0. Ensure .l2s and tmp directories exist for link2symlink hardlink emulation
             File l2sDir = new File(rootfsDir, ".l2s");
@@ -164,27 +171,45 @@ public class ScriptGenerator {
             binDir.mkdirs();
         }
 
-        // Script to easily install essential packages (nano, curl, wget, bash, sudo)
+        // Script to easily install essential packages (nano, curl, wget, bash, sudo, ca-certificates) across all distros
         File extrasScript = new File(binDir, "install-extras");
         String content = "#!/bin/sh\n" +
-                "echo \"[Nuxora] Memeriksa koneksi & memasang paket tambahan...\"\n" +
+                "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH\n" +
+                "echo \"[Nuxora] Memeriksa koneksi & memasang paket penting (extras)...\"\n" +
                 "if command -v apk >/dev/null 2>&1; then\n" +
                 "    echo \"[Nuxora] Terdeteksi Alpine Linux (APK)...\"\n" +
-                "    apk update && apk add --no-cache --no-chown bash nano curl wget ca-certificates sudo\n" +
+                "    apk update\n" +
+                "    apk add --no-cache --no-chown bash nano curl wget ca-certificates sudo || apk add --no-cache bash nano curl wget ca-certificates sudo || true\n" +
                 "elif command -v apt-get >/dev/null 2>&1; then\n" +
-                "    echo \"[Nuxora] Terdeteksi Debian/Ubuntu (APT)...\"\n" +
-                "    DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -o Dpkg::Options::=\"--force-unsafe-io\" -o Dpkg::Options::=\"--force-bad-path\" nano curl wget sudo ca-certificates\n" +
+                "    echo \"[Nuxora] Terdeteksi Debian/Ubuntu/Kali/Parrot (APT)...\"\n" +
+                "    export DEBIAN_FRONTEND=noninteractive\n" +
+                "    apt-get update -y || true\n" +
+                "    apt-get install -y --no-install-recommends -o Dpkg::Options::=\"--force-unsafe-io\" -o Dpkg::Options::=\"--force-bad-path\" nano curl wget sudo ca-certificates || true\n" +
                 "elif command -v pacman >/dev/null 2>&1; then\n" +
                 "    echo \"[Nuxora] Terdeteksi Arch Linux (Pacman)...\"\n" +
                 "    if [ ! -d /etc/pacman.d/gnupg/private-keys-v1.d ]; then\n" +
-                "        echo \"[Nuxora] Menyiapkan pacman keyring (harap tunggu)...\"\n" +
+                "        echo \"[Nuxora] Menyiapkan pacman keyring...\"\n" +
                 "        pacman-key --init 2>/dev/null || true\n" +
                 "        pacman-key --populate 2>/dev/null || true\n" +
                 "    fi\n" +
                 "    pacman -Sy --noconfirm --needed nano curl wget sudo ca-certificates || true\n" +
+                "elif command -v zypper >/dev/null 2>&1; then\n" +
+                "    echo \"[Nuxora] Terdeteksi openSUSE (Zypper)...\"\n" +
+                "    zypper --non-interactive --gpg-auto-import-keys refresh || true\n" +
+                "    zypper --non-interactive --gpg-auto-import-keys install -y --no-recommends nano curl wget sudo ca-certificates-mozilla || zypper --non-interactive --gpg-auto-import-keys install -y --no-recommends nano curl wget sudo ca-certificates || true\n" +
+                "elif command -v xbps-install >/dev/null 2>&1; then\n" +
+                "    echo \"[Nuxora] Terdeteksi Void Linux (XBPS)...\"\n" +
+                "    xbps-install -Sy -y xbps || true\n" +
+                "    xbps-install -y nano curl wget sudo ca-certificates || true\n" +
                 "elif command -v dnf >/dev/null 2>&1; then\n" +
-                "    echo \"[Nuxora] Terdeteksi Fedora (DNF)...\"\n" +
-                "    dnf install -y nano curl wget sudo ca-certificates\n" +
+                "    echo \"[Nuxora] Terdeteksi Fedora/CentOS Stream (DNF)...\"\n" +
+                "    dnf install -y --setopt=install_weak_deps=False nano curl wget sudo ca-certificates || true\n" +
+                "elif command -v microdnf >/dev/null 2>&1; then\n" +
+                "    echo \"[Nuxora] Terdeteksi Minimal Fedora/CentOS (microdnf)...\"\n" +
+                "    microdnf install -y nano curl wget sudo ca-certificates || true\n" +
+                "elif command -v yum >/dev/null 2>&1; then\n" +
+                "    echo \"[Nuxora] Terdeteksi CentOS/RHEL (YUM)...\"\n" +
+                "    yum install -y nano curl wget sudo ca-certificates || true\n" +
                 "fi\n" +
                 "echo \"[Nuxora] Paket penting (nano, curl, bash, sudo) selesai disiapkan!\"\n";
 
@@ -225,7 +250,7 @@ public class ScriptGenerator {
         } catch (IOException ignored) {}
         rootExtras.setExecutable(true, false);
 
-        // Create /etc/profile.d/00-linuxdroid.sh for prompt and first-run
+        // Create /etc/profile.d/00-linuxdroid.sh for prompt and welcome banner
         File profileD = new File(rootfsDir, "etc/profile.d");
         if (!profileD.exists()) {
             profileD.mkdirs();
@@ -246,7 +271,6 @@ public class ScriptGenerator {
             sb.append("    echo \"  Selamat Datang di Linux (Nuxora)!\"\n");
             sb.append("    echo \"  Distro siap digunakan dengan hak akses ROOT.\"\n");
             sb.append("    echo \"=====================================================\"\n");
-            sb.append("    /usr/local/bin/install-extras\n");
             sb.append("fi\n");
         }
 
@@ -498,6 +522,137 @@ public class ScriptGenerator {
         sb.append("umount -l \"$ROOTFS/dev\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/sys\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/proc\" 2>/dev/null\n");
+
+        try (FileOutputStream fos = new FileOutputStream(script)) {
+            fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        script.setExecutable(true, false);
+        try {
+            Runtime.getRuntime().exec(new String[]{"chmod", "755", script.getAbsolutePath()}).waitFor();
+        } catch (Exception ignored) {}
+        return script;
+    }
+
+    /**
+     * Generate PRoot execution script to run a one-off command non-interactively
+     */
+    public static File createProotCommandScript(PRootManager prootManager, File rootfsDir, String command) throws IOException {
+        File internalBinDir = prootManager.getBinDir();
+        File script = new File(internalBinDir, "exec_proot_cmd.sh");
+
+        File prootExe = prootManager.getProotExecutable();
+        File loaderExe = prootManager.getLoaderExecutable();
+        String libPath = prootManager.getLibraryPath();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("#!/system/bin/sh\n");
+        sb.append("unset LD_PRELOAD\n");
+        sb.append("PROOT=\"").append(prootExe.getAbsolutePath()).append("\"\n");
+        sb.append("LOADER=\"").append(loaderExe.getAbsolutePath()).append("\"\n");
+        sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
+
+        sb.append("export LD_LIBRARY_PATH=\"").append(libPath).append(":$LD_LIBRARY_PATH\"\n");
+        sb.append("export PROOT_LOADER=\"$LOADER\"\n");
+        sb.append("export PROOT_TMP_DIR=\"$ROOTFS/tmp\"\n");
+        sb.append("export PROOT_L2S_DIR=\"$ROOTFS/.l2s\"\n");
+
+        sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
+        sb.append("mkdir -p \"$ROOTFS/.l2s\"\n");
+        sb.append("mkdir -p \"$ROOTFS/tmp/.empty_selinux\"\n");
+        sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" 2>/dev/null\n");
+        sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
+        sb.append("mkdir -p \"$ROOTFS/root\" 2>/dev/null\n");
+
+        sb.append("if [ ! -x \"$PROOT\" ]; then\n");
+        sb.append("    chmod 755 \"$PROOT\" 2>/dev/null\n");
+        sb.append("fi\n");
+        sb.append("if [ -f \"$LOADER\" ] && [ ! -x \"$LOADER\" ]; then\n");
+        sb.append("    chmod 755 \"$LOADER\" 2>/dev/null\n");
+        sb.append("fi\n");
+
+        sb.append("TARGET_SHELL=\"/bin/sh\"\n");
+        sb.append("if [ -x \"$ROOTFS/bin/bash\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/bin/bash\"\n");
+        sb.append("elif [ -x \"$ROOTFS/usr/bin/bash\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/usr/bin/bash\"\n");
+        sb.append("elif [ -x \"$ROOTFS/bin/sh\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/bin/sh\"\n");
+        sb.append("elif [ -x \"$ROOTFS/usr/bin/sh\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/usr/bin/sh\"\n");
+        sb.append("fi\n");
+
+        sb.append("exec \"$PROOT\" \\\n");
+        sb.append("  --kill-on-exit \\\n");
+        sb.append("  --link2symlink \\\n");
+        sb.append("  --sysvipc \\\n");
+        sb.append("  -L \\\n");
+        sb.append("  --kernel-release=6.1.0-Nuxora \\\n");
+        sb.append("  --fix-selinux-xattr \\\n");
+        sb.append("  -0 \\\n");
+        sb.append("  -r \"$ROOTFS\" \\\n");
+        sb.append("  -b /dev \\\n");
+        sb.append("  -b /proc \\\n");
+        sb.append("  -b /sys \\\n");
+        sb.append("  -b \"$ROOTFS/tmp/.empty_selinux:/sys/fs/selinux\" \\\n");
+        sb.append("  -b /proc/self/fd:/dev/fd \\\n");
+        sb.append("  -b /proc/self/fd/0:/dev/stdin \\\n");
+        sb.append("  -b /proc/self/fd/1:/dev/stdout \\\n");
+        sb.append("  -b /proc/self/fd/2:/dev/stderr \\\n");
+        sb.append("  -b /dev/urandom:/dev/random \\\n");
+        sb.append("  -b \"$ROOTFS/dev/shm:/dev/shm\" \\\n");
+        sb.append("  -w /root \\\n");
+        sb.append("  /usr/bin/env -i \\\n");
+        sb.append("  HOME=/root \\\n");
+        sb.append("  USER=root \\\n");
+        sb.append("  LOGNAME=root \\\n");
+        sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
+        sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
+        sb.append("  TERM=xterm-256color \\\n");
+        sb.append("  LANG=C.UTF-8 \\\n");
+        sb.append("  \"$TARGET_SHELL\" -c \"").append(command.replace("\"", "\\\"")).append("\"\n");
+
+        try (FileOutputStream fos = new FileOutputStream(script)) {
+            fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        script.setExecutable(true, false);
+        try {
+            Runtime.getRuntime().exec(new String[]{"chmod", "755", script.getAbsolutePath()}).waitFor();
+        } catch (Exception ignored) {}
+        return script;
+    }
+
+    /**
+     * Generate Chroot execution script to run a one-off command non-interactively
+     */
+    public static File createChrootCommandScript(File internalBinDir, File rootfsDir, String command) throws IOException {
+        File script = new File(internalBinDir, "exec_chroot_cmd.sh");
+        StringBuilder sb = new StringBuilder();
+        sb.append("#!/system/bin/sh\n");
+        sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
+        sb.append("grep -F \"$ROOTFS/proc\" /proc/mounts >/dev/null 2>&1 || mount -t proc proc \"$ROOTFS/proc\"\n");
+        sb.append("grep -F \"$ROOTFS/sys\" /proc/mounts >/dev/null 2>&1 || mount -t sysfs sys \"$ROOTFS/sys\"\n");
+        sb.append("grep -F \"$ROOTFS/dev\" /proc/mounts >/dev/null 2>&1 || mount -o bind /dev \"$ROOTFS/dev\"\n");
+        sb.append("mkdir -p \"$ROOTFS/dev/pts\"\n");
+        sb.append("grep -F \"$ROOTFS/dev/pts\" /proc/mounts >/dev/null 2>&1 || mount -t devpts devpts \"$ROOTFS/dev/pts\"\n");
+
+        sb.append("TARGET_SHELL=\"/bin/sh\"\n");
+        sb.append("if [ -x \"$ROOTFS/bin/bash\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/bin/bash\"\n");
+        sb.append("elif [ -x \"$ROOTFS/usr/bin/bash\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/usr/bin/bash\"\n");
+        sb.append("elif [ -x \"$ROOTFS/bin/sh\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/bin/sh\"\n");
+        sb.append("elif [ -x \"$ROOTFS/usr/bin/sh\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/usr/bin/sh\"\n");
+        sb.append("fi\n");
+
+        sb.append("chroot \"$ROOTFS\" /usr/bin/env -i HOME=/root USER=root LOGNAME=root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin TERM=xterm-256color LANG=C.UTF-8 \"$TARGET_SHELL\" -c \"").append(command.replace("\"", "\\\"")).append("\"\n");
+        sb.append("EXIT_CODE=$?\n");
+        sb.append("umount -l \"$ROOTFS/dev/pts\" 2>/dev/null\n");
+        sb.append("umount -l \"$ROOTFS/dev\" 2>/dev/null\n");
+        sb.append("umount -l \"$ROOTFS/sys\" 2>/dev/null\n");
+        sb.append("umount -l \"$ROOTFS/proc\" 2>/dev/null\n");
+        sb.append("exit $EXIT_CODE\n");
 
         try (FileOutputStream fos = new FileOutputStream(script)) {
             fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
