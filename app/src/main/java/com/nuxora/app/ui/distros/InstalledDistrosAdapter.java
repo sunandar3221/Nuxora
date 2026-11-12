@@ -74,7 +74,20 @@ public class InstalledDistrosAdapter extends RecyclerView.Adapter<InstalledDistr
         }
 
         // Mount sdcard chip
-        holder.chipStorage.setVisibility(item.isMountSdcard() ? View.VISIBLE : View.GONE);
+        holder.chipStorage.setVisibility(View.VISIBLE);
+        if (item.isMountSdcard()) {
+            holder.chipStorage.setText("Storage: /sdcard (Aktif)");
+            holder.chipStorage.setTextColor(Color.parseColor("#1B5E20"));
+        } else {
+            holder.chipStorage.setText("Storage: /sdcard (Nonaktif)");
+            holder.chipStorage.setTextColor(Color.parseColor("#64748B"));
+        }
+        holder.chipStorage.setOnClickListener(v -> {
+            boolean newMount = !item.isMountSdcard();
+            item.setMountSdcard(newMount);
+            com.nuxora.app.data.database.DistroDatabaseHelper.getInstance(v.getContext()).updateMountSdcard(item.getId(), newMount);
+            notifyItemChanged(holder.getAdapterPosition());
+        });
 
         // Actions
         holder.btnOpenTerminal.setOnClickListener(v -> {

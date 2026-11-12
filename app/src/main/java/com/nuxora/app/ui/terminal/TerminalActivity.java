@@ -446,6 +446,8 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             if (hasStorage && !targetDistro.isMountSdcard()) {
                 targetDistro.setMountSdcard(true);
                 DistroDatabaseHelper.getInstance(this).updateMountSdcard(targetDistro.getId(), true);
+            } else if (targetDistro.isMountSdcard() && !hasStorage) {
+                StoragePermissionHelper.requestStoragePermission(this);
             }
             if (ShizukuHelper.hasShizukuPermission()) {
                 ShizukuHelper.grantStoragePermissionsViaShizukuAsync(this, null);

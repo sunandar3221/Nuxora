@@ -491,36 +491,55 @@ public class ScriptGenerator {
         String libPath = prootManager.getLibraryPath();
 
         android.content.Context context = prootManager.getContext();
-        boolean hasStorage = context != null && (
-                com.nuxora.app.utils.StoragePermissionHelper.hasStoragePermission(context) ||
-                com.nuxora.app.utils.ShizukuHelper.hasShizukuPermission()
-        );
-        boolean mountSdcard = distro.isMountSdcard() && hasStorage;
+        boolean mountSdcard = distro.isMountSdcard();
 
-        // Ensure symlink /root/sdcard -> /sdcard exists ONLY when storage permission is active
+        // Ensure mount point directories always exist inside rootfs
+        File fsSdcard = new File(rootfsDir, "sdcard");
+        if (!fsSdcard.exists()) fsSdcard.mkdirs();
+        File fsMntSdcard = new File(rootfsDir, "mnt/sdcard");
+        if (!fsMntSdcard.exists()) fsMntSdcard.mkdirs();
+        File fsStorage = new File(rootfsDir, "storage");
+        if (!fsStorage.exists()) fsStorage.mkdirs();
+
         File rootDir = new File(rootfsDir, "root");
         if (!rootDir.exists()) {
             rootDir.mkdirs();
         }
         File rootSdcard = new File(rootDir, "sdcard");
-        File fsSdcard = new File(rootfsDir, "sdcard");
         if (mountSdcard) {
             try {
-                if (rootSdcard.exists()) {
+                if (rootSdcard.exists() || java.nio.file.Files.isSymbolicLink(rootSdcard.toPath())) {
                     rootSdcard.delete();
                 }
-                Runtime.getRuntime().exec(new String[]{"ln", "-sf", "/sdcard", rootSdcard.getAbsolutePath()}).waitFor();
+                java.nio.file.Files.createSymbolicLink(rootSdcard.toPath(), java.nio.file.Paths.get("/sdcard"));
             } catch (Exception ignored) {}
         } else {
-            if (rootSdcard.exists()) {
-                rootSdcard.delete();
-            }
-            if (fsSdcard.exists() && fsSdcard.isDirectory()) {
-                fsSdcard.delete();
-            }
             try {
-                Runtime.getRuntime().exec(new String[]{"rm", "-rf", rootSdcard.getAbsolutePath()}).waitFor();
+                if (rootSdcard.exists() || java.nio.file.Files.isSymbolicLink(rootSdcard.toPath())) {
+                    rootSdcard.delete();
+                }
             } catch (Exception ignored) {}
+        }
+
+        // Also ensure all /home/* directories have the sdcard symlink if mountSdcard is true
+        File homeDir = new File(rootfsDir, "home");
+        if (homeDir.exists() && homeDir.isDirectory()) {
+            File[] userDirs = homeDir.listFiles();
+            if (userDirs != null) {
+                for (File uDir : userDirs) {
+                    if (uDir.isDirectory()) {
+                        File uSdcard = new File(uDir, "sdcard");
+                        try {
+                            if (uSdcard.exists() || java.nio.file.Files.isSymbolicLink(uSdcard.toPath())) {
+                                uSdcard.delete();
+                            }
+                            if (mountSdcard) {
+                                java.nio.file.Files.createSymbolicLink(uSdcard.toPath(), java.nio.file.Paths.get("/sdcard"));
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
         }
 
         StringBuilder sb = new StringBuilder();
@@ -544,14 +563,7 @@ public class ScriptGenerator {
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
         sb.append("mkdir -p \"$ROOTFS/root\" 2>/dev/null\n");
 
-        if (mountSdcard) {
-            sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
-            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
-            sb.append("ln -s /sdcard \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
-        } else {
-            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
-            sb.append("rmdir \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
-        }
+        sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
 
         sb.append("# Clear any stale package manager locks\n");
         sb.append("rm -f \"$ROOTFS/var/lib/dpkg/lock\"* 2>/dev/null\n");
@@ -610,6 +622,20 @@ public class ScriptGenerator {
         sb.append("fi\n");
         sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
         sb.append("chmod 755 \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+        if (mountSdcard) {
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("ln -sf /sdcard \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("if [ -n \"$LOGIN_HOME\" ] && [ \"$LOGIN_HOME\" != \"/root\" ]; then\n");
+            sb.append("    mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+            sb.append("    rm -f \"$ROOTFS$LOGIN_HOME/sdcard\" 2>/dev/null\n");
+            sb.append("    ln -sf /sdcard \"$ROOTFS$LOGIN_HOME/sdcard\" 2>/dev/null\n");
+            sb.append("fi\n");
+        } else {
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("if [ -n \"$LOGIN_HOME\" ] && [ \"$LOGIN_HOME\" != \"/root\" ]; then\n");
+            sb.append("    rm -f \"$ROOTFS$LOGIN_HOME/sdcard\" 2>/dev/null\n");
+            sb.append("fi\n");
+        }
 
         sb.append("BIND_ARGS=\"\"\n");
         sb.append("[ -d \"/sys/fs/selinux\" ] || BIND_ARGS=\"$BIND_ARGS -b $ROOTFS/tmp/.empty_selinux:/sys/fs/selinux\"\n");
@@ -617,6 +643,19 @@ public class ScriptGenerator {
         sb.append("[ -e \"/proc/self/fd/0\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/0:/dev/stdin\"\n");
         sb.append("[ -e \"/proc/self/fd/1\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/1:/dev/stdout\"\n");
         sb.append("[ -e \"/proc/self/fd/2\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/2:/dev/stderr\"\n");
+
+        if (mountSdcard) {
+            sb.append("STORAGE_BINDS=\"\"\n");
+            sb.append("[ -d \"/storage\" ] && STORAGE_BINDS=\"$STORAGE_BINDS -b /storage\"\n");
+            sb.append("if [ -d \"/storage/emulated/0\" ]; then\n");
+            sb.append("    STORAGE_BINDS=\"$STORAGE_BINDS -b /storage/emulated/0:/sdcard -b /storage/emulated/0:/mnt/sdcard\"\n");
+            sb.append("elif [ -d \"/sdcard\" ]; then\n");
+            sb.append("    STORAGE_BINDS=\"$STORAGE_BINDS -b /sdcard:/sdcard -b /sdcard:/mnt/sdcard\"\n");
+            sb.append("elif [ -d \"/storage/self/primary\" ]; then\n");
+            sb.append("    STORAGE_BINDS=\"$STORAGE_BINDS -b /storage/self/primary:/sdcard -b /storage/self/primary:/mnt/sdcard\"\n");
+            sb.append("fi\n");
+            sb.append("[ -d \"/sdcard\" ] && STORAGE_BINDS=\"$STORAGE_BINDS -b /sdcard\"\n");
+        }
 
         sb.append("exec \"$PROOT\" \\\n");
         sb.append("  --kill-on-exit \\\n");
@@ -631,14 +670,11 @@ public class ScriptGenerator {
         sb.append("  -b /proc \\\n");
         sb.append("  -b /sys \\\n");
         sb.append("  $BIND_ARGS \\\n");
+        if (mountSdcard) {
+            sb.append("  $STORAGE_BINDS \\\n");
+        }
         sb.append("  -b /dev/urandom:/dev/random \\\n");
         sb.append("  -b \"$ROOTFS/dev/shm:/dev/shm\" \\\n");
-
-        if (mountSdcard) {
-            sb.append("  -b /storage/emulated/0:/sdcard \\\n");
-            sb.append("  -b /storage/emulated/0:/mnt/sdcard \\\n");
-            sb.append("  -b /storage \\\n");
-        }
 
         sb.append("  -w \"$LOGIN_HOME\" \\\n");
         sb.append("  /usr/bin/env -i \\\n");
@@ -688,15 +724,7 @@ public class ScriptGenerator {
         sb.append("grep -F \"$ROOTFS/dev/pts\" /proc/mounts >/dev/null 2>&1 || mount -t devpts devpts \"$ROOTFS/dev/pts\"\n");
 
         sb.append("mkdir -p \"$ROOTFS/root\" 2>/dev/null\n");
-        if (distro.isMountSdcard()) {
-            sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
-            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
-            sb.append("ln -s /sdcard \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
-            sb.append("grep -F \"$ROOTFS/sdcard\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage/emulated/0 \"$ROOTFS/sdcard\" 2>/dev/null || mount -o bind /sdcard \"$ROOTFS/sdcard\" 2>/dev/null\n");
-            sb.append("grep -F \"$ROOTFS/storage\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage \"$ROOTFS/storage\" 2>/dev/null\n");
-        } else {
-            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
-        }
+        sb.append("mkdir -p \"$ROOTFS/sdcard\" \"$ROOTFS/mnt/sdcard\" \"$ROOTFS/storage\" 2>/dev/null\n");
 
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
@@ -739,6 +767,22 @@ public class ScriptGenerator {
         sb.append("fi\n");
         sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
         sb.append("chmod 755 \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+        if (distro.isMountSdcard()) {
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("ln -sf /sdcard \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("if [ -n \"$LOGIN_HOME\" ] && [ \"$LOGIN_HOME\" != \"/root\" ]; then\n");
+            sb.append("    mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+            sb.append("    rm -f \"$ROOTFS$LOGIN_HOME/sdcard\" 2>/dev/null\n");
+            sb.append("    ln -sf /sdcard \"$ROOTFS$LOGIN_HOME/sdcard\" 2>/dev/null\n");
+            sb.append("fi\n");
+            sb.append("grep -F \"$ROOTFS/sdcard\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage/emulated/0 \"$ROOTFS/sdcard\" 2>/dev/null || mount -o bind /sdcard \"$ROOTFS/sdcard\" 2>/dev/null\n");
+            sb.append("grep -F \"$ROOTFS/storage\" /proc/mounts >/dev/null 2>&1 || mount -o bind /storage \"$ROOTFS/storage\" 2>/dev/null\n");
+        } else {
+            sb.append("rm -f \"$ROOTFS/root/sdcard\" 2>/dev/null\n");
+            sb.append("if [ -n \"$LOGIN_HOME\" ] && [ \"$LOGIN_HOME\" != \"/root\" ]; then\n");
+            sb.append("    rm -f \"$ROOTFS$LOGIN_HOME/sdcard\" 2>/dev/null\n");
+            sb.append("fi\n");
+        }
 
         sb.append("chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
         sb.append("  HOME=\"$LOGIN_HOME\" \\\n");
@@ -975,6 +1019,8 @@ public class ScriptGenerator {
         sb.append("fi\n");
         sb.append("\n");
         sb.append("mkdir -p \"/home/$USERNAME\"\n");
+        sb.append("rm -f \"/home/$USERNAME/sdcard\" 2>/dev/null\n");
+        sb.append("ln -sf /sdcard \"/home/$USERNAME/sdcard\" 2>/dev/null\n");
         sb.append("chown -R \"$USERNAME:$USERNAME\" \"/home/$USERNAME\" 2>/dev/null || chown -R 1000:1000 \"/home/$USERNAME\" 2>/dev/null || true\n");
         sb.append("chmod 755 \"/home/$USERNAME\" 2>/dev/null || true\n");
         sb.append("\n");

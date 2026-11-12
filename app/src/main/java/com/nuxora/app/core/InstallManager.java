@@ -241,6 +241,20 @@ public class InstallManager {
             ScriptGenerator.setupSudoWrapper(targetRootfsDir);
             ScriptGenerator.setupExtrasScript(targetRootfsDir, true);
 
+            // Ensure mount points and /root/sdcard symlink exist
+            new File(targetRootfsDir, "sdcard").mkdirs();
+            new File(targetRootfsDir, "mnt/sdcard").mkdirs();
+            new File(targetRootfsDir, "storage").mkdirs();
+            File instRootDir = new File(targetRootfsDir, "root");
+            if (!instRootDir.exists()) instRootDir.mkdirs();
+            File instRootSdcard = new File(instRootDir, "sdcard");
+            try {
+                if (instRootSdcard.exists() || java.nio.file.Files.isSymbolicLink(instRootSdcard.toPath())) {
+                    instRootSdcard.delete();
+                }
+                java.nio.file.Files.createSymbolicLink(instRootSdcard.toPath(), java.nio.file.Paths.get("/sdcard"));
+            } catch (Exception ignored) {}
+
             // 5. Run extras installation if selected
             if (installExtras) {
                 setStatus("Memasang paket penting (extras)...");
