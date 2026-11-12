@@ -355,6 +355,7 @@ public class ScriptGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("unset LD_PRELOAD\n");
+        sb.append("export PROOT_IGNORE_MISSING_BINDINGS=1\n");
         sb.append("PROOT=\"").append(prootExe.getAbsolutePath()).append("\"\n");
         sb.append("LOADER=\"").append(loaderExe.getAbsolutePath()).append("\"\n");
         sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
@@ -367,7 +368,8 @@ public class ScriptGenerator {
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
         sb.append("mkdir -p \"$ROOTFS/.l2s\"\n");
         sb.append("mkdir -p \"$ROOTFS/tmp/.empty_selinux\"\n");
-        sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" 2>/dev/null\n");
+        sb.append("mkdir -p \"$ROOTFS/sys/fs/selinux\" 2>/dev/null\n");
+        sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" \"$ROOTFS/dev/fd\" 2>/dev/null\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
         sb.append("mkdir -p \"$ROOTFS/root\" 2>/dev/null\n");
 
@@ -408,20 +410,42 @@ public class ScriptGenerator {
         if (defaultUser == null || defaultUser.trim().isEmpty()) {
             defaultUser = "root";
         }
-        boolean isNonRoot = !"root".equalsIgnoreCase(defaultUser);
 
-        if (isNonRoot) {
-            sb.append("LOGIN_USER=\"").append(defaultUser).append("\"\n");
-            sb.append("LOGIN_HOME=\"/home/").append(defaultUser).append("\"\n");
-            sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
-            sb.append("if [ ! -f \"$ROOTFS/etc/passwd\" ] || ! grep -q \"^$LOGIN_USER:\" \"$ROOTFS/etc/passwd\"; then\n");
-            sb.append("    LOGIN_USER=\"root\"\n");
-            sb.append("    LOGIN_HOME=\"/root\"\n");
-            sb.append("fi\n");
-        } else {
-            sb.append("LOGIN_USER=\"root\"\n");
-            sb.append("LOGIN_HOME=\"/root\"\n");
-        }
+        sb.append("DEFAULT_USER=\"").append(defaultUser).append("\"\n");
+        sb.append("LOGIN_USER=\"root\"\n");
+        sb.append("LOGIN_HOME=\"/root\"\n");
+        sb.append("CHANGE_ID_ARG=\"-0\"\n");
+        sb.append("\n");
+        sb.append("if [ -n \"$DEFAULT_USER\" ] && [ \"$DEFAULT_USER\" != \"root\" ] && [ -f \"$ROOTFS/etc/passwd\" ]; then\n");
+        sb.append("    USER_LINE=$(grep \"^$DEFAULT_USER:\" \"$ROOTFS/etc/passwd\" 2>/dev/null)\n");
+        sb.append("    if [ -n \"$USER_LINE\" ]; then\n");
+        sb.append("        LOGIN_USER=\"$DEFAULT_USER\"\n");
+        sb.append("        LOGIN_UID=$(echo \"$USER_LINE\" | cut -d: -f3)\n");
+        sb.append("        LOGIN_GID=$(echo \"$USER_LINE\" | cut -d: -f4)\n");
+        sb.append("        DETECTED_HOME=$(echo \"$USER_LINE\" | cut -d: -f6)\n");
+        sb.append("        DETECTED_SHELL=$(echo \"$USER_LINE\" | cut -d: -f7)\n");
+        sb.append("        if [ -n \"$DETECTED_HOME\" ]; then\n");
+        sb.append("            LOGIN_HOME=\"$DETECTED_HOME\"\n");
+        sb.append("        else\n");
+        sb.append("            LOGIN_HOME=\"/home/$LOGIN_USER\"\n");
+        sb.append("        fi\n");
+        sb.append("        if [ -n \"$DETECTED_SHELL\" ] && [ -x \"$ROOTFS$DETECTED_SHELL\" ]; then\n");
+        sb.append("            TARGET_SHELL=\"$DETECTED_SHELL\"\n");
+        sb.append("        fi\n");
+        sb.append("        if [ -n \"$LOGIN_UID\" ] && [ -n \"$LOGIN_GID\" ]; then\n");
+        sb.append("            CHANGE_ID_ARG=\"--change-id=$LOGIN_UID:$LOGIN_GID\"\n");
+        sb.append("        fi\n");
+        sb.append("    fi\n");
+        sb.append("fi\n");
+        sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+        sb.append("chmod 755 \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+
+        sb.append("BIND_ARGS=\"\"\n");
+        sb.append("[ -d \"/sys/fs/selinux\" ] || BIND_ARGS=\"$BIND_ARGS -b $ROOTFS/tmp/.empty_selinux:/sys/fs/selinux\"\n");
+        sb.append("[ -e \"/proc/self/fd\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd:/dev/fd\"\n");
+        sb.append("[ -e \"/proc/self/fd/0\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/0:/dev/stdin\"\n");
+        sb.append("[ -e \"/proc/self/fd/1\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/1:/dev/stdout\"\n");
+        sb.append("[ -e \"/proc/self/fd/2\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/2:/dev/stderr\"\n");
 
         sb.append("exec \"$PROOT\" \\\n");
         sb.append("  --kill-on-exit \\\n");
@@ -430,16 +454,12 @@ public class ScriptGenerator {
         sb.append("  -L \\\n");
         sb.append("  --kernel-release=6.1.0-Nuxora \\\n");
         sb.append("  --fix-selinux-xattr \\\n");
-        sb.append("  -0 \\\n");
+        sb.append("  $CHANGE_ID_ARG \\\n");
         sb.append("  -r \"$ROOTFS\" \\\n");
         sb.append("  -b /dev \\\n");
         sb.append("  -b /proc \\\n");
         sb.append("  -b /sys \\\n");
-        sb.append("  -b \"$ROOTFS/tmp/.empty_selinux:/sys/fs/selinux\" \\\n");
-        sb.append("  -b /proc/self/fd:/dev/fd \\\n");
-        sb.append("  -b /proc/self/fd/0:/dev/stdin \\\n");
-        sb.append("  -b /proc/self/fd/1:/dev/stdout \\\n");
-        sb.append("  -b /proc/self/fd/2:/dev/stderr \\\n");
+        sb.append("  $BIND_ARGS \\\n");
         sb.append("  -b /dev/urandom:/dev/random \\\n");
         sb.append("  -b \"$ROOTFS/dev/shm:/dev/shm\" \\\n");
 
@@ -458,11 +478,7 @@ public class ScriptGenerator {
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
-        if (isNonRoot) {
-            sb.append("  \"$TARGET_SHELL\" -c 'if [ \"$LOGIN_USER\" != \"root\" ]; then (su -l \"$LOGIN_USER\" 2>/dev/null || runuser -u \"$LOGIN_USER\" -- \"$TARGET_SHELL\" --login -i 2>/dev/null || exec \"$TARGET_SHELL\" --login -i); else exec \"$TARGET_SHELL\" --login -i; fi'\n");
-        } else {
-            sb.append("  \"$TARGET_SHELL\" --login -i\n");
-        }
+        sb.append("  \"$TARGET_SHELL\" -l\n");
 
         try (FileOutputStream fos = new FileOutputStream(script)) {
             fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
@@ -527,34 +543,51 @@ public class ScriptGenerator {
         if (chrootUser == null || chrootUser.trim().isEmpty()) {
             chrootUser = "root";
         }
-        boolean isChrootNonRoot = !"root".equalsIgnoreCase(chrootUser);
 
-        if (isChrootNonRoot) {
-            sb.append("LOGIN_USER=\"").append(chrootUser).append("\"\n");
-            sb.append("LOGIN_HOME=\"/home/").append(chrootUser).append("\"\n");
-            sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
-            sb.append("if [ ! -f \"$ROOTFS/etc/passwd\" ] || ! grep -q \"^$LOGIN_USER:\" \"$ROOTFS/etc/passwd\"; then\n");
-            sb.append("    LOGIN_USER=\"root\"\n");
-            sb.append("    LOGIN_HOME=\"/root\"\n");
-            sb.append("fi\n");
-        } else {
-            sb.append("LOGIN_USER=\"root\"\n");
-            sb.append("LOGIN_HOME=\"/root\"\n");
-        }
+        sb.append("DEFAULT_USER=\"").append(chrootUser).append("\"\n");
+        sb.append("LOGIN_USER=\"root\"\n");
+        sb.append("LOGIN_HOME=\"/root\"\n");
+        sb.append("\n");
+        sb.append("if [ -n \"$DEFAULT_USER\" ] && [ \"$DEFAULT_USER\" != \"root\" ] && [ -f \"$ROOTFS/etc/passwd\" ]; then\n");
+        sb.append("    USER_LINE=$(grep \"^$DEFAULT_USER:\" \"$ROOTFS/etc/passwd\" 2>/dev/null)\n");
+        sb.append("    if [ -n \"$USER_LINE\" ]; then\n");
+        sb.append("        LOGIN_USER=\"$DEFAULT_USER\"\n");
+        sb.append("        DETECTED_HOME=$(echo \"$USER_LINE\" | cut -d: -f6)\n");
+        sb.append("        DETECTED_SHELL=$(echo \"$USER_LINE\" | cut -d: -f7)\n");
+        sb.append("        if [ -n \"$DETECTED_HOME\" ]; then\n");
+        sb.append("            LOGIN_HOME=\"$DETECTED_HOME\"\n");
+        sb.append("        else\n");
+        sb.append("            LOGIN_HOME=\"/home/$LOGIN_USER\"\n");
+        sb.append("        fi\n");
+        sb.append("        if [ -n \"$DETECTED_SHELL\" ] && [ -x \"$ROOTFS$DETECTED_SHELL\" ]; then\n");
+        sb.append("            TARGET_SHELL=\"$DETECTED_SHELL\"\n");
+        sb.append("        fi\n");
+        sb.append("    fi\n");
+        sb.append("fi\n");
+        sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+        sb.append("chmod 755 \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
 
-        sb.append("chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
-        sb.append("  HOME=\"$LOGIN_HOME\" \\\n");
-        sb.append("  USER=\"$LOGIN_USER\" \\\n");
-        sb.append("  LOGNAME=\"$LOGIN_USER\" \\\n");
-        sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
-        sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
-        sb.append("  TERM=xterm-256color \\\n");
-        sb.append("  LANG=C.UTF-8 \\\n");
-        if (isChrootNonRoot) {
-            sb.append("  \"$TARGET_SHELL\" -c 'if [ \"$LOGIN_USER\" != \"root\" ]; then (su -l \"$LOGIN_USER\" 2>/dev/null || runuser -u \"$LOGIN_USER\" -- \"$TARGET_SHELL\" --login -i 2>/dev/null || exec \"$TARGET_SHELL\" --login -i); else exec \"$TARGET_SHELL\" --login -i; fi'\n");
-        } else {
-            sb.append("  \"$TARGET_SHELL\" --login -i\n");
-        }
+        sb.append("if [ \"$LOGIN_USER\" != \"root\" ]; then\n");
+        sb.append("  chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
+        sb.append("    HOME=\"$LOGIN_HOME\" \\\n");
+        sb.append("    USER=\"$LOGIN_USER\" \\\n");
+        sb.append("    LOGNAME=\"$LOGIN_USER\" \\\n");
+        sb.append("    SHELL=\"$TARGET_SHELL\" \\\n");
+        sb.append("    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
+        sb.append("    TERM=xterm-256color \\\n");
+        sb.append("    LANG=C.UTF-8 \\\n");
+        sb.append("    su -l \"$LOGIN_USER\" || chroot \"$ROOTFS\" /usr/bin/env -i HOME=\"$LOGIN_HOME\" USER=\"$LOGIN_USER\" LOGNAME=\"$LOGIN_USER\" SHELL=\"$TARGET_SHELL\" PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin TERM=xterm-256color LANG=C.UTF-8 \"$TARGET_SHELL\" -l\n");
+        sb.append("else\n");
+        sb.append("  chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
+        sb.append("    HOME=\"$LOGIN_HOME\" \\\n");
+        sb.append("    USER=\"$LOGIN_USER\" \\\n");
+        sb.append("    LOGNAME=\"$LOGIN_USER\" \\\n");
+        sb.append("    SHELL=\"$TARGET_SHELL\" \\\n");
+        sb.append("    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
+        sb.append("    TERM=xterm-256color \\\n");
+        sb.append("    LANG=C.UTF-8 \\\n");
+        sb.append("    \"$TARGET_SHELL\" -l\n");
+        sb.append("fi\n");
         sb.append("EXIT_CODE=$?\n");
         sb.append("umount -l \"$ROOTFS/storage\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/sdcard\" 2>/dev/null\n");
@@ -613,6 +646,7 @@ public class ScriptGenerator {
         StringBuilder sb = new StringBuilder();
         sb.append("#!/system/bin/sh\n");
         sb.append("unset LD_PRELOAD\n");
+        sb.append("export PROOT_IGNORE_MISSING_BINDINGS=1\n");
         sb.append("PROOT=\"").append(prootExe.getAbsolutePath()).append("\"\n");
         sb.append("LOADER=\"").append(loaderExe.getAbsolutePath()).append("\"\n");
         sb.append("ROOTFS=\"").append(rootfsDir.getAbsolutePath()).append("\"\n");
@@ -625,7 +659,8 @@ public class ScriptGenerator {
         sb.append("mkdir -p \"$ROOTFS/tmp\"\n");
         sb.append("mkdir -p \"$ROOTFS/.l2s\"\n");
         sb.append("mkdir -p \"$ROOTFS/tmp/.empty_selinux\"\n");
-        sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" 2>/dev/null\n");
+        sb.append("mkdir -p \"$ROOTFS/sys/fs/selinux\" 2>/dev/null\n");
+        sb.append("mkdir -p \"$ROOTFS/dev/pts\" \"$ROOTFS/dev/shm\" \"$ROOTFS/dev/fd\" 2>/dev/null\n");
         sb.append("chmod 1777 \"$ROOTFS/tmp\" 2>/dev/null\n");
         sb.append("mkdir -p \"$ROOTFS/root\" 2>/dev/null\n");
 
@@ -647,6 +682,13 @@ public class ScriptGenerator {
         sb.append("    TARGET_SHELL=\"/usr/bin/sh\"\n");
         sb.append("fi\n");
 
+        sb.append("BIND_ARGS=\"\"\n");
+        sb.append("[ -d \"/sys/fs/selinux\" ] || BIND_ARGS=\"$BIND_ARGS -b $ROOTFS/tmp/.empty_selinux:/sys/fs/selinux\"\n");
+        sb.append("[ -e \"/proc/self/fd\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd:/dev/fd\"\n");
+        sb.append("[ -e \"/proc/self/fd/0\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/0:/dev/stdin\"\n");
+        sb.append("[ -e \"/proc/self/fd/1\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/1:/dev/stdout\"\n");
+        sb.append("[ -e \"/proc/self/fd/2\" ] && BIND_ARGS=\"$BIND_ARGS -b /proc/self/fd/2:/dev/stderr\"\n");
+
         sb.append("exec \"$PROOT\" \\\n");
         sb.append("  --kill-on-exit \\\n");
         sb.append("  --link2symlink \\\n");
@@ -659,11 +701,7 @@ public class ScriptGenerator {
         sb.append("  -b /dev \\\n");
         sb.append("  -b /proc \\\n");
         sb.append("  -b /sys \\\n");
-        sb.append("  -b \"$ROOTFS/tmp/.empty_selinux:/sys/fs/selinux\" \\\n");
-        sb.append("  -b /proc/self/fd:/dev/fd \\\n");
-        sb.append("  -b /proc/self/fd/0:/dev/stdin \\\n");
-        sb.append("  -b /proc/self/fd/1:/dev/stdout \\\n");
-        sb.append("  -b /proc/self/fd/2:/dev/stderr \\\n");
+        sb.append("  $BIND_ARGS \\\n");
         sb.append("  -b /dev/urandom:/dev/random \\\n");
         sb.append("  -b \"$ROOTFS/dev/shm:/dev/shm\" \\\n");
         sb.append("  -w /root \\\n");
@@ -757,16 +795,27 @@ public class ScriptGenerator {
         sb.append("if id \"$USERNAME\" >/dev/null 2>&1; then\n");
         sb.append("    echo \"[Nuxora] Pengguna $USERNAME sudah terdaftar.\"\n");
         sb.append("else\n");
+        sb.append("    CREATED=0\n");
         sb.append("    if command -v useradd >/dev/null 2>&1; then\n");
-        sb.append("        useradd -m -s \"$TARGET_SHELL\" \"$USERNAME\" 2>/dev/null || useradd -m \"$USERNAME\" 2>/dev/null || true\n");
-        sb.append("    elif command -v adduser >/dev/null 2>&1; then\n");
-        sb.append("        adduser -D -s \"$TARGET_SHELL\" \"$USERNAME\" 2>/dev/null || adduser --disabled-password --gecos \"\" \"$USERNAME\" 2>/dev/null || adduser -D \"$USERNAME\" 2>/dev/null || true\n");
+        sb.append("        useradd -m -s \"$TARGET_SHELL\" \"$USERNAME\" 2>/dev/null && CREATED=1 || useradd -m \"$USERNAME\" 2>/dev/null && CREATED=1 || true\n");
+        sb.append("    fi\n");
+        sb.append("    if [ \"$CREATED\" -eq 0 ] && command -v adduser >/dev/null 2>&1; then\n");
+        sb.append("        adduser -D -s \"$TARGET_SHELL\" \"$USERNAME\" 2>/dev/null && CREATED=1 || adduser --disabled-password --gecos \"\" \"$USERNAME\" 2>/dev/null && CREATED=1 || adduser -D \"$USERNAME\" 2>/dev/null && CREATED=1 || true\n");
+        sb.append("    fi\n");
+        sb.append("    if ! grep -q \"^$USERNAME:\" /etc/passwd 2>/dev/null; then\n");
+        sb.append("        echo \"$USERNAME:x:1000:1000:$USERNAME,,,:/home/$USERNAME:$TARGET_SHELL\" >> /etc/passwd\n");
+        sb.append("        if [ -f /etc/shadow ] && ! grep -q \"^$USERNAME:\" /etc/shadow; then\n");
+        sb.append("            echo \"$USERNAME:*:19000:0:99999:7:::\" >> /etc/shadow\n");
+        sb.append("        fi\n");
+        sb.append("        if [ -f /etc/group ] && ! grep -q \"^$USERNAME:\" /etc/group; then\n");
+        sb.append("            echo \"$USERNAME:x:1000:\" >> /etc/group\n");
+        sb.append("        fi\n");
         sb.append("    fi\n");
         sb.append("fi\n");
         sb.append("\n");
         sb.append("mkdir -p \"/home/$USERNAME\"\n");
-        sb.append("chown -R \"$USERNAME:$USERNAME\" \"/home/$USERNAME\" 2>/dev/null || true\n");
-        sb.append("chmod 750 \"/home/$USERNAME\" 2>/dev/null || true\n");
+        sb.append("chown -R \"$USERNAME:$USERNAME\" \"/home/$USERNAME\" 2>/dev/null || chown -R 1000:1000 \"/home/$USERNAME\" 2>/dev/null || true\n");
+        sb.append("chmod 755 \"/home/$USERNAME\" 2>/dev/null || true\n");
         sb.append("\n");
         sb.append("if [ -n \"$PASSWORD\" ]; then\n");
         sb.append("    echo \"$USERNAME:$PASSWORD\" | chpasswd 2>/dev/null || (echo \"$PASSWORD\"; echo \"$PASSWORD\") | passwd \"$USERNAME\" 2>/dev/null || true\n");
@@ -779,21 +828,42 @@ public class ScriptGenerator {
         sb.append("for grp in $GROUPS; do\n");
         sb.append("    groupadd -f \"$grp\" 2>/dev/null || addgroup \"$grp\" 2>/dev/null || true\n");
         sb.append("    usermod -aG \"$grp\" \"$USERNAME\" 2>/dev/null || adduser \"$USERNAME\" \"$grp\" 2>/dev/null || gpasswd -a \"$USERNAME\" \"$grp\" 2>/dev/null || true\n");
+        sb.append("    if [ -f /etc/group ] && grep -q \"^$grp:\" /etc/group; then\n");
+        sb.append("        if ! grep \"^$grp:\" /etc/group | grep -q \"$USERNAME\"; then\n");
+        sb.append("            sed -i \"/^$grp:/ s/$/,$USERNAME/; s/:,/:/\" /etc/group 2>/dev/null || true\n");
+        sb.append("        fi\n");
+        sb.append("    fi\n");
         sb.append("    echo \"[Nuxora] Menambahkan $USERNAME ke grup: $grp\"\n");
         sb.append("done\n");
         sb.append("\n");
         sb.append("if echo \"$GROUPS\" | grep -E \"sudo|wheel\" >/dev/null 2>&1; then\n");
-        sb.append("    mkdir -p /etc/sudoers.d\n");
+        sb.append("    mkdir -p /etc/sudoers.d 2>/dev/null\n");
         sb.append("    echo \"$USERNAME ALL=(ALL:ALL) NOPASSWD:ALL\" > \"/etc/sudoers.d/01_$USERNAME\"\n");
-        sb.append("    chmod 0440 \"/etc/sudoers.d/01_$USERNAME\"\n");
+        sb.append("    chmod 0440 \"/etc/sudoers.d/01_$USERNAME\" 2>/dev/null || true\n");
+        sb.append("    if [ -f /etc/sudoers ]; then\n");
+        sb.append("        if ! grep -q \"sudoers.d\" /etc/sudoers; then\n");
+        sb.append("            echo \"@includedir /etc/sudoers.d\" >> /etc/sudoers 2>/dev/null || true\n");
+        sb.append("        fi\n");
+        sb.append("        if ! grep -q \"$USERNAME ALL\" /etc/sudoers; then\n");
+        sb.append("            echo \"$USERNAME ALL=(ALL:ALL) NOPASSWD:ALL\" >> /etc/sudoers 2>/dev/null || true\n");
+        sb.append("        fi\n");
+        sb.append("    fi\n");
         sb.append("    echo \"[Nuxora] Akses sudo telah dikonfigurasi untuk $USERNAME.\"\n");
         sb.append("fi\n");
         sb.append("\n");
-        sb.append("if [ ! -f \"/home/$USERNAME/.profile\" ]; then\n");
-        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" > \"/home/$USERNAME/.profile\"\n");
-        sb.append("    echo \"export TERM=xterm-256color\" >> \"/home/$USERNAME/.profile\"\n");
-        sb.append("    echo \"export LANG=C.UTF-8\" >> \"/home/$USERNAME/.profile\"\n");
-        sb.append("    chown \"$USERNAME:$USERNAME\" \"/home/$USERNAME/.profile\" 2>/dev/null || true\n");
+        sb.append("PROFILE=\"/home/$USERNAME/.profile\"\n");
+        sb.append("if [ ! -f \"$PROFILE\" ]; then\n");
+        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" > \"$PROFILE\"\n");
+        sb.append("    echo \"export TERM=xterm-256color\" >> \"$PROFILE\"\n");
+        sb.append("    echo \"export LANG=C.UTF-8\" >> \"$PROFILE\"\n");
+        sb.append("    chown \"$USERNAME:$USERNAME\" \"$PROFILE\" 2>/dev/null || chown 1000:1000 \"$PROFILE\" 2>/dev/null || true\n");
+        sb.append("fi\n");
+        sb.append("BASHRC=\"/home/$USERNAME/.bashrc\"\n");
+        sb.append("if [ ! -f \"$BASHRC\" ]; then\n");
+        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" > \"$BASHRC\"\n");
+        sb.append("    echo \"export TERM=xterm-256color\" >> \"$BASHRC\"\n");
+        sb.append("    echo \"export LANG=C.UTF-8\" >> \"$BASHRC\"\n");
+        sb.append("    chown \"$USERNAME:$USERNAME\" \"$BASHRC\" 2>/dev/null || chown 1000:1000 \"$BASHRC\" 2>/dev/null || true\n");
         sb.append("fi\n");
         sb.append("if [ -d \"/sdcard\" ]; then\n");
         sb.append("    ln -sf /sdcard \"/home/$USERNAME/sdcard\" 2>/dev/null || true\n");

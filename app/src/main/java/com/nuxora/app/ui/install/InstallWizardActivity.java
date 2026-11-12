@@ -430,6 +430,9 @@ public class InstallWizardActivity extends AppCompatActivity {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    if (line.toLowerCase().contains("proot warning") || line.toLowerCase().contains("proot info")) {
+                        continue;
+                    }
                     log(line);
                 }
             }
@@ -471,6 +474,9 @@ public class InstallWizardActivity extends AppCompatActivity {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    if (line.toLowerCase().contains("proot warning") || line.toLowerCase().contains("proot info")) {
+                        continue;
+                    }
                     log(line);
                 }
             }
