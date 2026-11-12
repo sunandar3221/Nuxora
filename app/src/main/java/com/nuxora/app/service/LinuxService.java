@@ -265,10 +265,19 @@ public class LinuxService extends Service {
     }
 
     private Notification buildInstallNotification(String distroName, String statusText, int percent, boolean isIndeterminate) {
+        Intent openIntent = new Intent(this, com.nuxora.app.ui.install.InstallWizardActivity.class);
+        openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 2, openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
+        );
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Nuxora - Menginstal " + distroName)
                 .setContentText(statusText)
                 .setSmallIcon(R.drawable.ic_terminal)
+                .setContentIntent(pendingIntent)
                 .setOngoing(true)
                 .setAutoCancel(false)
                 .setPriority(NotificationCompat.PRIORITY_LOW);

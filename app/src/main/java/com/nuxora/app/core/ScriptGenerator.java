@@ -181,10 +181,98 @@ public class ScriptGenerator {
     }
 
     /**
+     * Installs a protected rm wrapper to prevent accidental deletion of Android storage (/sdcard)
+     */
+    public static void setupProtectedRm(File rootfsDir) {
+        try {
+            File binDir = new File(rootfsDir, "usr/local/bin");
+            if (!binDir.exists()) binDir.mkdirs();
+
+            File rmWrapper = new File(binDir, "rm");
+            String content = "#!/bin/sh\n" +
+                    "# Nuxora Protected rm wrapper to prevent accidental wipe of Android storage\n" +
+                    "REAL_RM=\"\"\n" +
+                    "if [ -x \"/bin/busybox\" ] && /bin/busybox rm --help >/dev/null 2>&1; then\n" +
+                    "    REAL_RM=\"/bin/busybox rm\"\n" +
+                    "elif [ -x \"/usr/bin/rm.real\" ]; then\n" +
+                    "    REAL_RM=\"/usr/bin/rm.real\"\n" +
+                    "elif [ -x \"/bin/rm.real\" ]; then\n" +
+                    "    REAL_RM=\"/bin/rm.real\"\n" +
+                    "elif [ -x \"/usr/bin/rm\" ] && [ \"/usr/bin/rm\" != \"$0\" ]; then\n" +
+                    "    REAL_RM=\"/usr/bin/rm\"\n" +
+                    "elif [ -x \"/bin/rm\" ] && [ \"/bin/rm\" != \"$0\" ]; then\n" +
+                    "    REAL_RM=\"/bin/rm\"\n" +
+                    "else\n" +
+                    "    REAL_RM=\"rm\"\n" +
+                    "fi\n" +
+                    "\n" +
+                    "is_recursive=0\n" +
+                    "for arg in \"$@\"; do\n" +
+                    "    case \"$arg\" in\n" +
+                    "        -r|-R|-rf|-fr|-rfi|-fir|-rI|-Ir|--recursive|--recursive*)\n" +
+                    "            is_recursive=1\n" +
+                    "            ;;\n" +
+                    "    esac\n" +
+                    "done\n" +
+                    "\n" +
+                    "if [ \"$is_recursive\" -eq 1 ]; then\n" +
+                    "    FILTERED_ARGS=\"\"\n" +
+                    "    for arg in \"$@\"; do\n" +
+                    "        clean_arg=\"$(echo \"$arg\" | sed 's:/*$::')\"\n" +
+                    "        [ -z \"$clean_arg\" ] && clean_arg=\"/\"\n" +
+                    "        case \"$clean_arg\" in\n" +
+                    "            /|/*|/sdcard|/mnt/sdcard|/storage|/storage/emulated|/storage/emulated/0|/root/sdcard|/home/*/sdcard)\n" +
+                    "                echo \"[Nuxora Security] Penghapusan rekursif pada '$arg' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
+                    "                ;;\n" +
+                    "            *)\n" +
+                    "                FILTERED_ARGS=\"$FILTERED_ARGS \\\"$arg\\\"\"\n" +
+                    "                ;;\n" +
+                    "        esac\n" +
+                    "    done\n" +
+                    "    if [ -z \"$FILTERED_ARGS\" ]; then\n" +
+                    "        exit 1\n" +
+                    "    fi\n" +
+                    "    eval \"$REAL_RM $FILTERED_ARGS\"\n" +
+                    "else\n" +
+                    "    $REAL_RM \"$@\"\n" +
+                    "fi\n";
+
+            try (FileOutputStream fos = new FileOutputStream(rmWrapper)) {
+                fos.write(content.getBytes(StandardCharsets.UTF_8));
+            } catch (IOException ignored) {}
+            rmWrapper.setExecutable(true, false);
+
+            // Also safeguard /bin/rm and /usr/bin/rm if they are real binaries
+            File binRm = new File(rootfsDir, "bin/rm");
+            File binRmReal = new File(rootfsDir, "bin/rm.real");
+            File usrBinRm = new File(rootfsDir, "usr/bin/rm");
+            File usrBinRmReal = new File(rootfsDir, "usr/bin/rm.real");
+
+            if (binRm.exists() && !java.nio.file.Files.isSymbolicLink(binRm.toPath()) && !binRmReal.exists()) {
+                binRm.renameTo(binRmReal);
+                binRmReal.setExecutable(true, false);
+                try (FileOutputStream fos = new FileOutputStream(binRm)) {
+                    fos.write(content.getBytes(StandardCharsets.UTF_8));
+                }
+                binRm.setExecutable(true, false);
+            }
+            if (usrBinRm.exists() && !java.nio.file.Files.isSymbolicLink(usrBinRm.toPath()) && !usrBinRmReal.exists()) {
+                usrBinRm.renameTo(usrBinRmReal);
+                usrBinRmReal.setExecutable(true, false);
+                try (FileOutputStream fos = new FileOutputStream(usrBinRm)) {
+                    fos.write(content.getBytes(StandardCharsets.UTF_8));
+                }
+                usrBinRm.setExecutable(true, false);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
      * Prepares helper scripts and welcome profile inside the distro
      */
     public static void setupExtrasScript(File rootfsDir, boolean enableFirstRun) {
         setupPackageManagerFixes(rootfsDir);
+        setupProtectedRm(rootfsDir);
 
         File binDir = new File(rootfsDir, "usr/local/bin");
         if (!binDir.exists()) {
@@ -278,11 +366,20 @@ public class ScriptGenerator {
         File linuxdroidProfile = new File(profileD, "00-linuxdroid.sh");
         StringBuilder sb = new StringBuilder();
         sb.append("# Nuxora Shell Environment\n");
-        sb.append("export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]# '\n");
         sb.append("export TERM=xterm-256color\n");
-        sb.append("export HOME=/root\n");
-        sb.append("export USER=root\n");
-        sb.append("export LOGNAME=root\n");
+        sb.append("export LANG=C.UTF-8\n");
+        sb.append("if [ \"$(id -u 2>/dev/null)\" = \"0\" ]; then\n");
+        sb.append("    [ -z \"$HOME\" ] && export HOME=/root\n");
+        sb.append("    export USER=root\n");
+        sb.append("    export LOGNAME=root\n");
+        sb.append("    export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]# '\n");
+        sb.append("else\n");
+        sb.append("    # Retain user HOME so bash replaces current directory with ~ instead of full path\n");
+        sb.append("    if [ -z \"$HOME\" ]; then\n");
+        sb.append("        export HOME=\"/home/$(id -un 2>/dev/null || echo user)\"\n");
+        sb.append("    fi\n");
+        sb.append("    export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]$ '\n");
+        sb.append("fi\n");
 
         if (enableFirstRun) {
             sb.append("if [ -f /root/.first_run ]; then\n");
@@ -414,14 +511,11 @@ public class ScriptGenerator {
         sb.append("DEFAULT_USER=\"").append(defaultUser).append("\"\n");
         sb.append("LOGIN_USER=\"root\"\n");
         sb.append("LOGIN_HOME=\"/root\"\n");
-        sb.append("CHANGE_ID_ARG=\"-0\"\n");
         sb.append("\n");
         sb.append("if [ -n \"$DEFAULT_USER\" ] && [ \"$DEFAULT_USER\" != \"root\" ] && [ -f \"$ROOTFS/etc/passwd\" ]; then\n");
         sb.append("    USER_LINE=$(grep \"^$DEFAULT_USER:\" \"$ROOTFS/etc/passwd\" 2>/dev/null)\n");
         sb.append("    if [ -n \"$USER_LINE\" ]; then\n");
         sb.append("        LOGIN_USER=\"$DEFAULT_USER\"\n");
-        sb.append("        LOGIN_UID=$(echo \"$USER_LINE\" | cut -d: -f3)\n");
-        sb.append("        LOGIN_GID=$(echo \"$USER_LINE\" | cut -d: -f4)\n");
         sb.append("        DETECTED_HOME=$(echo \"$USER_LINE\" | cut -d: -f6)\n");
         sb.append("        DETECTED_SHELL=$(echo \"$USER_LINE\" | cut -d: -f7)\n");
         sb.append("        if [ -n \"$DETECTED_HOME\" ]; then\n");
@@ -431,9 +525,6 @@ public class ScriptGenerator {
         sb.append("        fi\n");
         sb.append("        if [ -n \"$DETECTED_SHELL\" ] && [ -x \"$ROOTFS$DETECTED_SHELL\" ]; then\n");
         sb.append("            TARGET_SHELL=\"$DETECTED_SHELL\"\n");
-        sb.append("        fi\n");
-        sb.append("        if [ -n \"$LOGIN_UID\" ] && [ -n \"$LOGIN_GID\" ]; then\n");
-        sb.append("            CHANGE_ID_ARG=\"--change-id=$LOGIN_UID:$LOGIN_GID\"\n");
         sb.append("        fi\n");
         sb.append("    fi\n");
         sb.append("fi\n");
@@ -454,7 +545,7 @@ public class ScriptGenerator {
         sb.append("  -L \\\n");
         sb.append("  --kernel-release=6.1.0-Nuxora \\\n");
         sb.append("  --fix-selinux-xattr \\\n");
-        sb.append("  $CHANGE_ID_ARG \\\n");
+        sb.append("  -0 \\\n");
         sb.append("  -r \"$ROOTFS\" \\\n");
         sb.append("  -b /dev \\\n");
         sb.append("  -b /proc \\\n");
@@ -478,7 +569,7 @@ public class ScriptGenerator {
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
-        sb.append("  \"$TARGET_SHELL\" -l\n");
+        sb.append("  \"$TARGET_SHELL\" -c 'if [ \"$1\" != \"root\" ]; then (su -l \"$1\" 2>/dev/null || runuser -u \"$1\" -- \"$2\" -l 2>/dev/null || exec \"$2\" -l); else exec \"$2\" -l; fi' _ \"$LOGIN_USER\" \"$TARGET_SHELL\"\n");
 
         try (FileOutputStream fos = new FileOutputStream(script)) {
             fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
@@ -853,14 +944,16 @@ public class ScriptGenerator {
         sb.append("\n");
         sb.append("PROFILE=\"/home/$USERNAME/.profile\"\n");
         sb.append("if [ ! -f \"$PROFILE\" ]; then\n");
-        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" > \"$PROFILE\"\n");
+        sb.append("    echo \"export HOME=\\\"/home/$USERNAME\\\"\" > \"$PROFILE\"\n");
+        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" >> \"$PROFILE\"\n");
         sb.append("    echo \"export TERM=xterm-256color\" >> \"$PROFILE\"\n");
         sb.append("    echo \"export LANG=C.UTF-8\" >> \"$PROFILE\"\n");
         sb.append("    chown \"$USERNAME:$USERNAME\" \"$PROFILE\" 2>/dev/null || chown 1000:1000 \"$PROFILE\" 2>/dev/null || true\n");
         sb.append("fi\n");
         sb.append("BASHRC=\"/home/$USERNAME/.bashrc\"\n");
         sb.append("if [ ! -f \"$BASHRC\" ]; then\n");
-        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" > \"$BASHRC\"\n");
+        sb.append("    echo \"export HOME=\\\"/home/$USERNAME\\\"\" > \"$BASHRC\"\n");
+        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" >> \"$BASHRC\"\n");
         sb.append("    echo \"export TERM=xterm-256color\" >> \"$BASHRC\"\n");
         sb.append("    echo \"export LANG=C.UTF-8\" >> \"$BASHRC\"\n");
         sb.append("    chown \"$USERNAME:$USERNAME\" \"$BASHRC\" 2>/dev/null || chown 1000:1000 \"$BASHRC\" 2>/dev/null || true\n");

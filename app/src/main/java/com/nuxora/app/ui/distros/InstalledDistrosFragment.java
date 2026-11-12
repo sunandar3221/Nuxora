@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -41,6 +42,10 @@ public class InstalledDistrosFragment extends Fragment implements InstalledDistr
     private LinearLayout emptyStateLayout;
     private ExtendedFloatingActionButton fabAddDistro;
     private MaterialButton btnExploreCatalog;
+    private com.google.android.material.card.MaterialCardView cardActiveInstall;
+    private TextView tvActiveInstallTitle;
+    private TextView tvActiveInstallStatus;
+    private com.google.android.material.progressindicator.LinearProgressIndicator progressActiveInstall;
 
     private final BroadcastReceiver stopReceiver = new BroadcastReceiver() {
         @Override
@@ -61,6 +66,16 @@ public class InstalledDistrosFragment extends Fragment implements InstalledDistr
         emptyStateLayout = view.findViewById(R.id.emptyStateLayout);
         fabAddDistro = view.findViewById(R.id.fabAddDistro);
         btnExploreCatalog = view.findViewById(R.id.btnExploreCatalog);
+        cardActiveInstall = view.findViewById(R.id.cardActiveInstall);
+        tvActiveInstallTitle = view.findViewById(R.id.tvActiveInstallTitle);
+        tvActiveInstallStatus = view.findViewById(R.id.tvActiveInstallStatus);
+        progressActiveInstall = view.findViewById(R.id.progressActiveInstall);
+
+        cardActiveInstall.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), com.nuxora.app.ui.install.InstallWizardActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+        });
 
         dbHelper = DistroDatabaseHelper.getInstance(requireContext());
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -107,6 +122,23 @@ public class InstalledDistrosFragment extends Fragment implements InstalledDistr
     public void onResume() {
         super.onResume();
         loadDistros();
+        checkActiveInstallStatus();
+    }
+
+    private void checkActiveInstallStatus() {
+        if (cardActiveInstall == null) return;
+        com.nuxora.app.core.InstallManager manager = com.nuxora.app.core.InstallManager.getInstance();
+        if (manager.isInstalling()) {
+            cardActiveInstall.setVisibility(View.VISIBLE);
+            tvActiveInstallTitle.setText("Menginstal " + manager.getDistroDisplayName() + "…");
+            tvActiveInstallStatus.setText(manager.getCurrentStatus());
+            progressActiveInstall.setIndeterminate(manager.isCurrentIndeterminate());
+            if (!manager.isCurrentIndeterminate()) {
+                progressActiveInstall.setProgress(manager.getCurrentProgress());
+            }
+        } else {
+            cardActiveInstall.setVisibility(View.GONE);
+        }
     }
 
     public void loadDistros() {
@@ -114,6 +146,8 @@ public class InstalledDistrosFragment extends Fragment implements InstalledDistr
         distrosList.clear();
         distrosList.addAll(dbHelper.getAllInstalledDistros());
         adapter.notifyDataSetChanged();
+
+        checkActiveInstallStatus();
 
         if (distrosList.isEmpty()) {
             emptyStateLayout.setVisibility(View.VISIBLE);

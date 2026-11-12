@@ -43,7 +43,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class InstallWizardActivity extends AppCompatActivity {
+public class InstallWizardActivity extends AppCompatActivity implements com.nuxora.app.core.InstallManager.InstallListener {
 
     public static final String EXTRA_DISTRO = "extra_distro";
     public static final String EXTRA_LOCAL_FILE_URI = "extra_local_file_uri";
@@ -77,7 +77,6 @@ public class InstallWizardActivity extends AppCompatActivity {
     private ScrollView scrollLogs;
     private MaterialButton btnActionInstall;
 
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isInstallCompleted = false;
     private long installedDistroId = -1;
 
@@ -90,12 +89,72 @@ public class InstallWizardActivity extends AppCompatActivity {
         localFileUriString = getIntent().getStringExtra(EXTRA_LOCAL_FILE_URI);
 
         if (distro == null) {
-            Toast.makeText(this, "Data distro tidak ditemukan.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+            com.nuxora.app.core.InstallManager manager = com.nuxora.app.core.InstallManager.getInstance();
+            if (manager.isInstalling() || manager.isCompleted()) {
+                String dName = manager.getDistroDisplayName();
+                if (dName == null || dName.isEmpty()) dName = "Linux Distro";
+                distro = new Distro("active", dName, "", "", R.drawable.ic_distro_generic);
+            } else {
+                Toast.makeText(this, "Data distro tidak ditemukan.", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
         }
 
         initViews();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        com.nuxora.app.core.InstallManager manager = com.nuxora.app.core.InstallManager.getInstance();
+        manager.setListener(this);
+
+        if (manager.isInstalling()) {
+            btnActionInstall.setEnabled(false);
+            btnActionInstall.setText("Menginstal…");
+            cardModeProot.setEnabled(false);
+            cardModeRoot.setEnabled(false);
+            etDistroName.setEnabled(false);
+            switchMountSdcard.setEnabled(false);
+            if (switchInstallExtras != null) switchInstallExtras.setEnabled(false);
+            if (switchSetupUser != null) switchSetupUser.setEnabled(false);
+            progressSection.setVisibility(View.VISIBLE);
+
+            StringBuilder sb = new StringBuilder();
+            for (String l : manager.getLogs()) {
+                sb.append(l).append("\n");
+            }
+            tvLogs.setText(sb.toString());
+            tvProgressStatus.setText(manager.getCurrentStatus());
+            progressBar.setProgress(manager.getCurrentProgress());
+            progressBar.setIndeterminate(manager.isCurrentIndeterminate());
+            if (scrollLogs != null) {
+                scrollLogs.post(() -> scrollLogs.fullScroll(ScrollView.FOCUS_DOWN));
+            }
+        } else if (manager.isCompleted()) {
+            isInstallCompleted = true;
+            installedDistroId = manager.getCompletedInstalledDistroId();
+            progressSection.setVisibility(View.VISIBLE);
+
+            StringBuilder sb = new StringBuilder();
+            for (String l : manager.getLogs()) {
+                sb.append(l).append("\n");
+            }
+            tvLogs.setText(sb.toString());
+            progressBar.setIndeterminate(false);
+            progressBar.setProgress(100);
+            tvProgressStatus.setText(R.string.install_success);
+            btnActionInstall.setText(R.string.btn_terminal);
+            btnActionInstall.setIconResource(R.drawable.ic_terminal);
+            btnActionInstall.setEnabled(true);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        com.nuxora.app.core.InstallManager.getInstance().setListener(null);
     }
 
     private void initViews() {
@@ -206,10 +265,13 @@ public class InstallWizardActivity extends AppCompatActivity {
 
     private void startInstallation() {
         btnActionInstall.setEnabled(false);
+        btnActionInstall.setText("Menginstal…");
         cardModeProot.setEnabled(false);
         cardModeRoot.setEnabled(false);
         etDistroName.setEnabled(false);
         switchMountSdcard.setEnabled(false);
+        if (switchInstallExtras != null) switchInstallExtras.setEnabled(false);
+        if (switchSetupUser != null) switchSetupUser.setEnabled(false);
         progressSection.setVisibility(View.VISIBLE);
 
         final ExecutionMode executionMode = radioRoot.isChecked() ? ExecutionMode.ROOT : ExecutionMode.PROOT;
@@ -238,343 +300,67 @@ public class InstallWizardActivity extends AppCompatActivity {
 
         final boolean isDefaultUser = switchDefaultUser != null && switchDefaultUser.isChecked() && setupUser && !newUsername.isEmpty();
 
-        new Thread(() -> performInstall(executionMode, distroDisplayName, mountSd, installExtras,
-                setupUser, newUsername, newPassword, selectedGroups, isDefaultUser)).start();
+        com.nuxora.app.core.InstallManager.getInstance().startInstallation(
+                this, executionMode, distro, distroDisplayName, localFileUriString,
+                mountSd, installExtras, setupUser, newUsername, newPassword, selectedGroups, isDefaultUser
+        );
     }
 
-    private void performInstall(ExecutionMode executionMode, String distroDisplayName, boolean mountSd, boolean installExtras,
-                                boolean setupUser, String newUsername, String newPassword, String selectedGroups, boolean isDefaultUser) {
-        LinuxService.startInstall(this, distroDisplayName);
-        try {
-            log("Memulai proses instalasi untuk " + distroDisplayName + "…");
-            log("Mode: " + executionMode.getDisplayName());
-
-            // 1. Prepare PRoot if Non-Root
-            if (executionMode == ExecutionMode.PROOT) {
-                setStatus("Memeriksa komponen PRoot…");
-                LinuxService.updateInstallProgress(this, distroDisplayName, "Menyiapkan komponen PRoot…", 0, true);
-                PRootManager prootManager = new PRootManager(this);
-                if (!prootManager.isProotInstalled()) {
-                    log("Mengunduh komponen PRoot binary…");
-                    prootManager.ensureProotBinary((file, count) -> log(file));
-                    log("PRoot siap digunakan.");
-                }
-            }
-
-            // 2. Prepare Rootfs file
-            String arch = DeviceUtils.getNormalizedArch();
-            String downloadUrl = distro.getUrlForArch(arch);
-            File cacheDir = getExternalCacheDir() != null ? getExternalCacheDir() : getCacheDir();
-
-            String fileExt = ".tar.xz";
-            if (localFileUriString != null) {
-                String lower = localFileUriString.toLowerCase();
-                if (lower.contains(".tar.gz") || lower.contains(".tgz")) fileExt = ".tar.gz";
-                else if (lower.contains(".tar.bz2")) fileExt = ".tar.bz2";
-            } else if (downloadUrl != null) {
-                String lower = downloadUrl.toLowerCase();
-                if (lower.contains(".tar.gz") || lower.contains(".tgz")) fileExt = ".tar.gz";
-                else if (lower.contains(".tar.bz2")) fileExt = ".tar.bz2";
-            }
-            File archiveFile = new File(cacheDir, "rootfs_" + distro.getId() + fileExt);
-            if (archiveFile.exists()) {
-                archiveFile.delete();
-            }
-
-            if (localFileUriString != null) {
-                setStatus("Menyalin berkas arsip lokal…");
-                LinuxService.updateInstallProgress(this, distroDisplayName, "Menyalin berkas arsip lokal…", 0, true);
-                log("Membaca berkas lokal…");
-                Uri localUri = Uri.parse(localFileUriString);
-                try (InputStream in = getContentResolver().openInputStream(localUri);
-                     FileOutputStream out = new FileOutputStream(archiveFile)) {
-                    byte[] buf = new byte[32768];
-                    int read;
-                    while ((read = in.read(buf)) != -1) {
-                        out.write(buf, 0, read);
-                    }
-                }
-                log("Berkas arsip lokal berhasil disalin (" + DeviceUtils.formatFileSize(archiveFile.length()) + ").");
-            } else {
-                if (downloadUrl == null || downloadUrl.isEmpty()) {
-                    throw new Exception("URL download tidak tersedia untuk arsitektur: " + arch);
-                }
-                setStatus("Mengunduh image sistem Linux (RootFS)…");
-                log("Mengunduh dari: " + downloadUrl);
-                downloadFile(downloadUrl, archiveFile, distroDisplayName);
-                log("Pengunduhan selesai. Ukuran berkas: " + DeviceUtils.formatFileSize(archiveFile.length()));
-            }
-
-            if (!archiveFile.exists() || archiveFile.length() < 100000) {
-                throw new Exception("Berkas arsip tidak lengkap (" + DeviceUtils.formatFileSize(archiveFile.length()) + "). Silakan coba unduh lagi.");
-            }
-
-            // 3. Extract Rootfs
-            setStatus("Mengekstrak berkas sistem Linux…");
-            LinuxService.updateInstallProgress(this, distroDisplayName, "Mengekstrak berkas sistem Linux…", 0, true);
-            File distrosBaseDir = new File(getFilesDir(), "distros");
-            if (!distrosBaseDir.exists()) distrosBaseDir.mkdirs();
-
-            String folderName = distro.getId() + "_" + System.currentTimeMillis();
-            File targetRootfsDir = new File(distrosBaseDir, folderName);
-            targetRootfsDir.mkdirs();
-
-            log("Mengekstrak ke: " + targetRootfsDir.getAbsolutePath());
-            ExtractionHelper.extractArchive(archiveFile, targetRootfsDir, (currentFile, count) -> {
-                log("[" + count + "] Ekstrak: " + currentFile);
-                if (count % 150 == 0) {
-                    LinuxService.updateInstallProgress(this, distroDisplayName, "Mengekstrak berkas (" + count + " file)...", 0, true);
-                }
-            });
-            log("Ekstraksi RootFS selesai!");
-
-            // 4. Configure DNS & environments
-            setStatus("Mengkonfigurasi DNS & paket sistem…");
-            LinuxService.updateInstallProgress(this, distroDisplayName, "Mengkonfigurasi DNS & paket sistem…", 95, false);
-            ScriptGenerator.setupDns(targetRootfsDir);
-            log("DNS resolv.conf disetel ke Google & Cloudflare DNS.");
-            ScriptGenerator.setupPackageManagerFixes(targetRootfsDir);
-            ScriptGenerator.setupExtrasScript(targetRootfsDir, true);
-
-            // 5. Run extras installation if selected (BEFORE entering terminal!)
-            if (installExtras) {
-                setStatus("Memasang paket penting (extras)...");
-                LinuxService.updateInstallProgress(this, distroDisplayName, "Memasang paket penting (extras)…", 97, true);
-                log("\n--- Menjalankan Pemasangan Paket Penting (Extras) ---");
-                log("Memasang perkakas dasar (nano, curl, wget, sudo, ca-certificates)...");
-                runExtrasInstallation(executionMode, targetRootfsDir);
-                log("--- Pemasangan Paket Penting Selesai! ---\n");
-            } else {
-                log("Paket penting dilewati. Anda dapat memasangnya kapan saja di terminal dengan: /usr/local/bin/install-extras");
-            }
-
-            // 6. Setup custom user if selected
-            if (setupUser && !newUsername.isEmpty()) {
-                setStatus("Menyiapkan pengguna: " + newUsername + "…");
-                LinuxService.updateInstallProgress(this, distroDisplayName, "Menyiapkan pengguna: " + newUsername + "…", 98, true);
-                log("\n--- Menyiapkan Pengguna Baru (User Setup) ---");
-                log("Nama Pengguna: " + newUsername);
-                log("Keanggotaan Grup: " + (selectedGroups.isEmpty() ? "(default)" : selectedGroups));
-                runUserSetupInstallation(executionMode, targetRootfsDir, newUsername, newPassword, selectedGroups);
-                log("--- Konfigurasi Pengguna Selesai! ---\n");
-            }
-
-            // 7. Clean downloaded archive cache
-            if (archiveFile.exists()) {
-                archiveFile.delete();
-            }
-
-            // 8. Save to Database
-            InstalledDistro installed = new InstalledDistro(
-                    distroDisplayName,
-                    distro.getId(),
-                    targetRootfsDir.getAbsolutePath(),
-                    executionMode
-            );
-            installed.setMountSdcard(mountSd);
-            installed.setCustomShell(distro.getDefaultShell());
-            installed.setDiskUsage(DeviceUtils.formatFileSize(targetRootfsDir.length()));
-            if (isDefaultUser) {
-                installed.setDefaultUser(newUsername);
-            } else {
-                installed.setDefaultUser("root");
-            }
-
-            installedDistroId = DistroDatabaseHelper.getInstance(this).insertDistro(installed);
-            log("Instalasi berhasil disimpan ke database!");
-
-            mainHandler.post(() -> {
-                isInstallCompleted = true;
-                progressBar.setIndeterminate(false);
-                progressBar.setProgress(100);
-                tvProgressStatus.setText(R.string.install_success);
-                btnActionInstall.setText(R.string.btn_terminal);
-                btnActionInstall.setIconResource(R.drawable.ic_terminal);
-                btnActionInstall.setEnabled(true);
-                Toast.makeText(this, "Instalasi selesai! Tekan Buka Terminal.", Toast.LENGTH_LONG).show();
-            });
-
-        } catch (Exception e) {
-            final String errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
-            log("ERROR: " + errorMsg);
-            mainHandler.post(() -> {
-                tvProgressStatus.setText("Gagal: " + errorMsg);
-                btnActionInstall.setEnabled(true);
-                btnActionInstall.setText("Coba Lagi");
-                Toast.makeText(this, "Gagal menginstal: " + errorMsg, Toast.LENGTH_LONG).show();
-            });
-        } finally {
-            LinuxService.stopInstall(this);
-        }
-    }
-
-    private void runExtrasInstallation(ExecutionMode mode, File rootfsDir) {
-        File execScript = null;
-        try {
-            Process process;
-            if (mode == ExecutionMode.ROOT) {
-                File binDir = new File(getFilesDir(), "bin");
-                if (!binDir.exists()) binDir.mkdirs();
-                execScript = ScriptGenerator.createChrootCommandScript(binDir, rootfsDir, "/usr/local/bin/install-extras");
-                ProcessBuilder pb = new ProcessBuilder("su", "-c", "/system/bin/sh " + execScript.getAbsolutePath());
-                pb.redirectErrorStream(true);
-                process = pb.start();
-            } else {
-                PRootManager prootManager = new PRootManager(this);
-                execScript = ScriptGenerator.createProotCommandScript(prootManager, rootfsDir, "/usr/local/bin/install-extras");
-                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", execScript.getAbsolutePath());
-                pb.redirectErrorStream(true);
-                process = pb.start();
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.toLowerCase().contains("proot warning") || line.toLowerCase().contains("proot info")) {
-                        continue;
-                    }
-                    log(line);
-                }
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                log("[Pemberitahuan] Skrip paket selesai dengan status: " + exitCode);
-            }
-        } catch (Exception e) {
-            log("[Peringatan] Kendala saat memasang paket penting: " + e.getMessage());
-            log("Anda tetap dapat memasangnya secara manual nanti di terminal dengan: /usr/local/bin/install-extras");
-        } finally {
-            if (execScript != null && execScript.exists()) {
-                execScript.delete();
+    @Override
+    public void onLog(String line) {
+        if (tvLogs != null) {
+            tvLogs.append(line + "\n");
+            if (scrollLogs != null) {
+                scrollLogs.post(() -> scrollLogs.fullScroll(ScrollView.FOCUS_DOWN));
             }
         }
     }
 
-    private void runUserSetupInstallation(ExecutionMode mode, File rootfsDir, String username, String password, String groups) {
-        File execScript = null;
-        try {
-            ScriptGenerator.setupUserScript(rootfsDir, username, password, groups);
-            Process process;
-            if (mode == ExecutionMode.ROOT) {
-                File binDir = new File(getFilesDir(), "bin");
-                if (!binDir.exists()) binDir.mkdirs();
-                execScript = ScriptGenerator.createChrootCommandScript(binDir, rootfsDir, "/usr/local/bin/setup-user");
-                ProcessBuilder pb = new ProcessBuilder("su", "-c", "/system/bin/sh " + execScript.getAbsolutePath());
-                pb.redirectErrorStream(true);
-                process = pb.start();
-            } else {
-                PRootManager prootManager = new PRootManager(this);
-                execScript = ScriptGenerator.createProotCommandScript(prootManager, rootfsDir, "/usr/local/bin/setup-user");
-                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", execScript.getAbsolutePath());
-                pb.redirectErrorStream(true);
-                process = pb.start();
-            }
+    @Override
+    public void onStatus(String statusText) {
+        if (tvProgressStatus != null) {
+            tvProgressStatus.setText(statusText);
+        }
+    }
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.toLowerCase().contains("proot warning") || line.toLowerCase().contains("proot info")) {
-                        continue;
-                    }
-                    log(line);
-                }
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                log("[Pemberitahuan] Konfigurasi user selesai dengan status: " + exitCode);
-            }
-        } catch (Exception e) {
-            log("[Peringatan] Kendala saat menyiapkan pengguna baru: " + e.getMessage());
-        } finally {
-            if (execScript != null && execScript.exists()) {
-                execScript.delete();
+    @Override
+    public void onProgress(int progress, boolean isIndeterminate) {
+        if (progressBar != null) {
+            progressBar.setIndeterminate(isIndeterminate);
+            if (!isIndeterminate) {
+                progressBar.setProgress(progress);
             }
         }
     }
 
-    private void downloadFile(String downloadUrl, File targetFile, String distroDisplayName) throws Exception {
-        downloadFileWithRedirects(downloadUrl, targetFile, 0, distroDisplayName);
+    @Override
+    public void onCompleted(long id) {
+        isInstallCompleted = true;
+        installedDistroId = id;
+        if (progressBar != null) {
+            progressBar.setIndeterminate(false);
+            progressBar.setProgress(100);
+        }
+        if (tvProgressStatus != null) {
+            tvProgressStatus.setText(R.string.install_success);
+        }
+        if (btnActionInstall != null) {
+            btnActionInstall.setText(R.string.btn_terminal);
+            btnActionInstall.setIconResource(R.drawable.ic_terminal);
+            btnActionInstall.setEnabled(true);
+        }
+        Toast.makeText(this, "Instalasi selesai! Tekan Buka Terminal.", Toast.LENGTH_LONG).show();
     }
 
-    private void downloadFileWithRedirects(String downloadUrl, File targetFile, int redirectCount, String distroDisplayName) throws Exception {
-        if (redirectCount > 6) {
-            throw new Exception("Terlalu banyak pengalihan (Too many redirects) saat mengunduh.");
+    @Override
+    public void onError(String error) {
+        if (tvProgressStatus != null) {
+            tvProgressStatus.setText("Gagal: " + error);
         }
-
-        URL url = new URL(downloadUrl);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setInstanceFollowRedirects(true);
-        conn.setConnectTimeout(60000);
-        conn.setReadTimeout(120000);
-        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36");
-
-        int status = conn.getResponseCode();
-        if (status >= 300 && status <= 308) {
-            String redirectUrl = conn.getHeaderField("Location");
-            if (redirectUrl != null) {
-                log("Mengikuti pengalihan URL…");
-                conn.disconnect();
-                downloadFileWithRedirects(redirectUrl, targetFile, redirectCount + 1, distroDisplayName);
-                return;
-            }
+        if (btnActionInstall != null) {
+            btnActionInstall.setEnabled(true);
+            btnActionInstall.setText("Coba Lagi");
         }
-
-        if (status != HttpURLConnection.HTTP_OK) {
-            throw new Exception("HTTP " + status + " (" + conn.getResponseMessage() + ") untuk tautan: " + downloadUrl);
-        }
-
-        long totalSize = conn.getContentLengthLong();
-        try (InputStream in = conn.getInputStream();
-             FileOutputStream out = new FileOutputStream(targetFile)) {
-            byte[] buf = new byte[32768];
-            long downloaded = 0;
-            int read;
-            long lastLogTime = System.currentTimeMillis();
-
-            while ((read = in.read(buf)) != -1) {
-                out.write(buf, 0, read);
-                downloaded += read;
-                if (System.currentTimeMillis() - lastLogTime > 800) {
-                    lastLogTime = System.currentTimeMillis();
-                    if (totalSize > 0) {
-                        int percent = (int) ((downloaded * 100) / totalSize);
-                        String progressText = "Mengunduh: " + percent + "% (" + DeviceUtils.formatFileSize(downloaded) + " / " + DeviceUtils.formatFileSize(totalSize) + ")";
-                        log(progressText);
-                        LinuxService.updateInstallProgress(this, distroDisplayName, progressText, percent, false);
-                        mainHandler.post(() -> {
-                            progressBar.setIndeterminate(false);
-                            progressBar.setProgress(percent);
-                        });
-                    } else {
-                        String progressText = "Mengunduh: " + DeviceUtils.formatFileSize(downloaded);
-                        log(progressText);
-                        LinuxService.updateInstallProgress(this, distroDisplayName, progressText, 0, true);
-                    }
-                }
-            }
-
-            if (totalSize > 0 && downloaded < totalSize) {
-                throw new Exception("Unduhan terputus di tengah jalan (" + DeviceUtils.formatFileSize(downloaded) + " dari " + DeviceUtils.formatFileSize(totalSize) + "). Silakan coba lagi.");
-            }
-        } finally {
-            conn.disconnect();
-        }
-    }
-
-    private void setStatus(String status) {
-        mainHandler.post(() -> tvProgressStatus.setText(status));
-    }
-
-    private void log(String message) {
-        mainHandler.post(() -> {
-            if (tvLogs != null) {
-                tvLogs.append(message + "\n");
-                if (scrollLogs != null) {
-                    scrollLogs.fullScroll(View.FOCUS_DOWN);
-                }
-            }
-        });
+        Toast.makeText(this, "Gagal menginstal: " + error, Toast.LENGTH_LONG).show();
     }
 }
