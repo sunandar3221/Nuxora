@@ -238,6 +238,7 @@ public class InstallManager {
             log("DNS resolv.conf disetel ke Google & Cloudflare DNS.");
             ScriptGenerator.setupPackageManagerFixes(targetRootfsDir);
             ScriptGenerator.setupProtectedRm(targetRootfsDir);
+            ScriptGenerator.setupSudoWrapper(targetRootfsDir);
             ScriptGenerator.setupExtrasScript(targetRootfsDir, true);
 
             // 5. Run extras installation if selected

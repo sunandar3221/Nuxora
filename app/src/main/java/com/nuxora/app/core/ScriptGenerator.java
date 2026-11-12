@@ -181,6 +181,64 @@ public class ScriptGenerator {
     }
 
     /**
+     * Installs a sudo wrapper to bypass PRoot /etc/sudoers UID ownership and SUID limitations
+     */
+    public static void setupSudoWrapper(File rootfsDir) {
+        try {
+            File binDir = new File(rootfsDir, "usr/local/bin");
+            if (!binDir.exists()) binDir.mkdirs();
+
+            File sudoWrapper = new File(binDir, "sudo");
+            String content = "#!/bin/sh\n" +
+                    "# Nuxora PRoot Sudo Wrapper\n" +
+                    "# Allows non-root users to execute administrative commands seamlessly without SUID/PAM errors\n" +
+                    "\n" +
+                    "while [ $# -gt 0 ]; do\n" +
+                    "    case \"$1\" in\n" +
+                    "        -u|-g)\n" +
+                    "            shift 2\n" +
+                    "            ;;\n" +
+                    "        -E|-i|-s|-H|-P|-b|-n|-v|-k|-K)\n" +
+                    "            shift\n" +
+                    "            ;;\n" +
+                    "        --)\n" +
+                    "            shift\n" +
+                    "            break\n" +
+                    "            ;;\n" +
+                    "        -*)\n" +
+                    "            shift\n" +
+                    "            ;;\n" +
+                    "        *)\n" +
+                    "            break\n" +
+                    "            ;;\n" +
+                    "    esac\n" +
+                    "done\n" +
+                    "\n" +
+                    "if [ $# -eq 0 ]; then\n" +
+                    "    exec \"${SHELL:-/bin/sh}\" -l\n" +
+                    "fi\n" +
+                    "\n" +
+                    "exec \"$@\"\n";
+
+            try (FileOutputStream fos = new FileOutputStream(sudoWrapper)) {
+                fos.write(content.getBytes(StandardCharsets.UTF_8));
+            } catch (IOException ignored) {}
+            sudoWrapper.setExecutable(true, false);
+
+            // Also safeguard /usr/bin/sudo if it exists
+            File usrBinSudo = new File(rootfsDir, "usr/bin/sudo");
+            File usrBinSudoReal = new File(rootfsDir, "usr/bin/sudo.real");
+            if (usrBinSudo.exists() && !java.nio.file.Files.isSymbolicLink(usrBinSudo.toPath()) && !usrBinSudoReal.exists()) {
+                usrBinSudo.renameTo(usrBinSudoReal);
+                try (FileOutputStream fos = new FileOutputStream(usrBinSudo)) {
+                    fos.write(content.getBytes(StandardCharsets.UTF_8));
+                }
+                usrBinSudo.setExecutable(true, false);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
      * Installs a protected rm wrapper to prevent accidental deletion of Android storage (/sdcard)
      */
     public static void setupProtectedRm(File rootfsDir) {
@@ -273,6 +331,7 @@ public class ScriptGenerator {
     public static void setupExtrasScript(File rootfsDir, boolean enableFirstRun) {
         setupPackageManagerFixes(rootfsDir);
         setupProtectedRm(rootfsDir);
+        setupSudoWrapper(rootfsDir);
 
         File binDir = new File(rootfsDir, "usr/local/bin");
         if (!binDir.exists()) {
@@ -368,17 +427,30 @@ public class ScriptGenerator {
         sb.append("# Nuxora Shell Environment\n");
         sb.append("export TERM=xterm-256color\n");
         sb.append("export LANG=C.UTF-8\n");
-        sb.append("if [ \"$(id -u 2>/dev/null)\" = \"0\" ]; then\n");
-        sb.append("    [ -z \"$HOME\" ] && export HOME=/root\n");
-        sb.append("    export USER=root\n");
-        sb.append("    export LOGNAME=root\n");
-        sb.append("    export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]# '\n");
-        sb.append("else\n");
-        sb.append("    # Retain user HOME so bash replaces current directory with ~ instead of full path\n");
-        sb.append("    if [ -z \"$HOME\" ]; then\n");
-        sb.append("        export HOME=\"/home/$(id -un 2>/dev/null || echo user)\"\n");
+        sb.append("if [ -n \"$BASH_VERSION\" ]; then\n");
+        sb.append("    if [ \"$(id -u 2>/dev/null)\" = \"0\" ]; then\n");
+        sb.append("        [ -z \"$HOME\" ] && export HOME=/root\n");
+        sb.append("        export USER=root\n");
+        sb.append("        export LOGNAME=root\n");
+        sb.append("        export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]# '\n");
+        sb.append("    else\n");
+        sb.append("        if [ -z \"$HOME\" ]; then\n");
+        sb.append("            export HOME=\"/home/$(id -un 2>/dev/null || echo user)\"\n");
+        sb.append("        fi\n");
+        sb.append("        export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]$ '\n");
         sb.append("    fi\n");
-        sb.append("    export PS1='\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]$ '\n");
+        sb.append("else\n");
+        sb.append("    _HNAME=\"$(cat /etc/hostname 2>/dev/null || echo localhost)\"\n");
+        sb.append("    _UNAME=\"$(id -un 2>/dev/null || echo root)\"\n");
+        sb.append("    if [ \"$(id -u 2>/dev/null)\" = \"0\" ]; then\n");
+        sb.append("        [ -z \"$HOME\" ] && export HOME=/root\n");
+        sb.append("        export USER=root\n");
+        sb.append("        export LOGNAME=root\n");
+        sb.append("        export PS1=\"${_UNAME}@${_HNAME}:# \"\n");
+        sb.append("    else\n");
+        sb.append("        [ -z \"$HOME\" ] && export HOME=\"/home/${_UNAME}\"\n");
+        sb.append("        export PS1=\"${_UNAME}@${_HNAME}:$ \"\n");
+        sb.append("    fi\n");
         sb.append("fi\n");
 
         if (enableFirstRun) {
@@ -409,6 +481,8 @@ public class ScriptGenerator {
     public static File createProotLaunchScript(PRootManager prootManager, File rootfsDir, InstalledDistro distro) throws IOException {
         setupPackageManagerFixes(rootfsDir);
         setupExtrasScript(rootfsDir, false);
+        setupProtectedRm(rootfsDir);
+        setupSudoWrapper(rootfsDir);
         File internalBinDir = prootManager.getBinDir();
         File script = new File(internalBinDir, "start_" + distro.getId() + ".sh");
 
@@ -511,11 +585,14 @@ public class ScriptGenerator {
         sb.append("DEFAULT_USER=\"").append(defaultUser).append("\"\n");
         sb.append("LOGIN_USER=\"root\"\n");
         sb.append("LOGIN_HOME=\"/root\"\n");
+        sb.append("CHANGE_ID_ARG=\"-0\"\n");
         sb.append("\n");
         sb.append("if [ -n \"$DEFAULT_USER\" ] && [ \"$DEFAULT_USER\" != \"root\" ] && [ -f \"$ROOTFS/etc/passwd\" ]; then\n");
         sb.append("    USER_LINE=$(grep \"^$DEFAULT_USER:\" \"$ROOTFS/etc/passwd\" 2>/dev/null)\n");
         sb.append("    if [ -n \"$USER_LINE\" ]; then\n");
         sb.append("        LOGIN_USER=\"$DEFAULT_USER\"\n");
+        sb.append("        LOGIN_UID=$(echo \"$USER_LINE\" | cut -d: -f3)\n");
+        sb.append("        LOGIN_GID=$(echo \"$USER_LINE\" | cut -d: -f4)\n");
         sb.append("        DETECTED_HOME=$(echo \"$USER_LINE\" | cut -d: -f6)\n");
         sb.append("        DETECTED_SHELL=$(echo \"$USER_LINE\" | cut -d: -f7)\n");
         sb.append("        if [ -n \"$DETECTED_HOME\" ]; then\n");
@@ -525,6 +602,9 @@ public class ScriptGenerator {
         sb.append("        fi\n");
         sb.append("        if [ -n \"$DETECTED_SHELL\" ] && [ -x \"$ROOTFS$DETECTED_SHELL\" ]; then\n");
         sb.append("            TARGET_SHELL=\"$DETECTED_SHELL\"\n");
+        sb.append("        fi\n");
+        sb.append("        if [ -n \"$LOGIN_UID\" ] && [ -n \"$LOGIN_GID\" ]; then\n");
+        sb.append("            CHANGE_ID_ARG=\"--change-id=$LOGIN_UID:$LOGIN_GID\"\n");
         sb.append("        fi\n");
         sb.append("    fi\n");
         sb.append("fi\n");
@@ -545,7 +625,7 @@ public class ScriptGenerator {
         sb.append("  -L \\\n");
         sb.append("  --kernel-release=6.1.0-Nuxora \\\n");
         sb.append("  --fix-selinux-xattr \\\n");
-        sb.append("  -0 \\\n");
+        sb.append("  $CHANGE_ID_ARG \\\n");
         sb.append("  -r \"$ROOTFS\" \\\n");
         sb.append("  -b /dev \\\n");
         sb.append("  -b /proc \\\n");
@@ -569,7 +649,7 @@ public class ScriptGenerator {
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
-        sb.append("  \"$TARGET_SHELL\" -c 'if [ \"$1\" != \"root\" ]; then (su -l \"$1\" 2>/dev/null || runuser -u \"$1\" -- \"$2\" -l 2>/dev/null || exec \"$2\" -l); else exec \"$2\" -l; fi' _ \"$LOGIN_USER\" \"$TARGET_SHELL\"\n");
+        sb.append("  \"$TARGET_SHELL\" -l\n");
 
         try (FileOutputStream fos = new FileOutputStream(script)) {
             fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
@@ -587,6 +667,8 @@ public class ScriptGenerator {
     public static File createChrootLaunchScript(File internalBinDir, File rootfsDir, InstalledDistro distro) throws IOException {
         setupPackageManagerFixes(rootfsDir);
         setupExtrasScript(rootfsDir, false);
+        setupProtectedRm(rootfsDir);
+        setupSudoWrapper(rootfsDir);
         File script = new File(internalBinDir, "start_root_" + distro.getId() + ".sh");
 
         StringBuilder sb = new StringBuilder();
@@ -658,27 +740,15 @@ public class ScriptGenerator {
         sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
         sb.append("chmod 755 \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
 
-        sb.append("if [ \"$LOGIN_USER\" != \"root\" ]; then\n");
-        sb.append("  chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
-        sb.append("    HOME=\"$LOGIN_HOME\" \\\n");
-        sb.append("    USER=\"$LOGIN_USER\" \\\n");
-        sb.append("    LOGNAME=\"$LOGIN_USER\" \\\n");
-        sb.append("    SHELL=\"$TARGET_SHELL\" \\\n");
-        sb.append("    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
-        sb.append("    TERM=xterm-256color \\\n");
-        sb.append("    LANG=C.UTF-8 \\\n");
-        sb.append("    su -l \"$LOGIN_USER\" || chroot \"$ROOTFS\" /usr/bin/env -i HOME=\"$LOGIN_HOME\" USER=\"$LOGIN_USER\" LOGNAME=\"$LOGIN_USER\" SHELL=\"$TARGET_SHELL\" PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin TERM=xterm-256color LANG=C.UTF-8 \"$TARGET_SHELL\" -l\n");
-        sb.append("else\n");
-        sb.append("  chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
-        sb.append("    HOME=\"$LOGIN_HOME\" \\\n");
-        sb.append("    USER=\"$LOGIN_USER\" \\\n");
-        sb.append("    LOGNAME=\"$LOGIN_USER\" \\\n");
-        sb.append("    SHELL=\"$TARGET_SHELL\" \\\n");
-        sb.append("    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
-        sb.append("    TERM=xterm-256color \\\n");
-        sb.append("    LANG=C.UTF-8 \\\n");
-        sb.append("    \"$TARGET_SHELL\" -l\n");
-        sb.append("fi\n");
+        sb.append("chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
+        sb.append("  HOME=\"$LOGIN_HOME\" \\\n");
+        sb.append("  USER=\"$LOGIN_USER\" \\\n");
+        sb.append("  LOGNAME=\"$LOGIN_USER\" \\\n");
+        sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
+        sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
+        sb.append("  TERM=xterm-256color \\\n");
+        sb.append("  LANG=C.UTF-8 \\\n");
+        sb.append("  \"$TARGET_SHELL\" -l\n");
         sb.append("EXIT_CODE=$?\n");
         sb.append("umount -l \"$ROOTFS/storage\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/sdcard\" 2>/dev/null\n");
