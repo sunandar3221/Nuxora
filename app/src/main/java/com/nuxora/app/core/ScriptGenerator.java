@@ -157,6 +157,26 @@ public class ScriptGenerator {
                 }
             }
 
+            // 7. Disable pam_loginuid in /etc/pam.d/ to prevent su/sudo loginuid failures on Android kernels
+            File pamDir = new File(rootfsDir, "etc/pam.d");
+            if (pamDir.exists() && pamDir.isDirectory()) {
+                File[] pamFiles = pamDir.listFiles();
+                if (pamFiles != null) {
+                    for (File f : pamFiles) {
+                        if (f.isFile()) {
+                            try {
+                                String content = new String(java.nio.file.Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+                                if (content.contains("pam_loginuid.so") && !content.contains("# session required pam_loginuid.so")) {
+                                    content = content.replace("session required pam_loginuid.so", "# session required pam_loginuid.so")
+                                                     .replace("session\trequired\tpam_loginuid.so", "# session\trequired\tpam_loginuid.so");
+                                    java.nio.file.Files.write(f.toPath(), content.getBytes(StandardCharsets.UTF_8));
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            }
+
         } catch (Exception ignored) {}
     }
 
@@ -384,6 +404,25 @@ public class ScriptGenerator {
         sb.append("    TARGET_SHELL=\"/usr/bin/sh\"\n");
         sb.append("fi\n");
 
+        String defaultUser = distro.getDefaultUser();
+        if (defaultUser == null || defaultUser.trim().isEmpty()) {
+            defaultUser = "root";
+        }
+        boolean isNonRoot = !"root".equalsIgnoreCase(defaultUser);
+
+        if (isNonRoot) {
+            sb.append("LOGIN_USER=\"").append(defaultUser).append("\"\n");
+            sb.append("LOGIN_HOME=\"/home/").append(defaultUser).append("\"\n");
+            sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+            sb.append("if [ ! -f \"$ROOTFS/etc/passwd\" ] || ! grep -q \"^$LOGIN_USER:\" \"$ROOTFS/etc/passwd\"; then\n");
+            sb.append("    LOGIN_USER=\"root\"\n");
+            sb.append("    LOGIN_HOME=\"/root\"\n");
+            sb.append("fi\n");
+        } else {
+            sb.append("LOGIN_USER=\"root\"\n");
+            sb.append("LOGIN_HOME=\"/root\"\n");
+        }
+
         sb.append("exec \"$PROOT\" \\\n");
         sb.append("  --kill-on-exit \\\n");
         sb.append("  --link2symlink \\\n");
@@ -410,16 +449,20 @@ public class ScriptGenerator {
             sb.append("  -b /storage \\\n");
         }
 
-        sb.append("  -w /root \\\n");
+        sb.append("  -w \"$LOGIN_HOME\" \\\n");
         sb.append("  /usr/bin/env -i \\\n");
-        sb.append("  HOME=/root \\\n");
-        sb.append("  USER=root \\\n");
-        sb.append("  LOGNAME=root \\\n");
+        sb.append("  HOME=\"$LOGIN_HOME\" \\\n");
+        sb.append("  USER=\"$LOGIN_USER\" \\\n");
+        sb.append("  LOGNAME=\"$LOGIN_USER\" \\\n");
         sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
-        sb.append("  \"$TARGET_SHELL\" --login -i\n");
+        if (isNonRoot) {
+            sb.append("  \"$TARGET_SHELL\" -c 'if [ \"$LOGIN_USER\" != \"root\" ]; then (su -l \"$LOGIN_USER\" 2>/dev/null || runuser -u \"$LOGIN_USER\" -- \"$TARGET_SHELL\" --login -i 2>/dev/null || exec \"$TARGET_SHELL\" --login -i); else exec \"$TARGET_SHELL\" --login -i; fi'\n");
+        } else {
+            sb.append("  \"$TARGET_SHELL\" --login -i\n");
+        }
 
         try (FileOutputStream fos = new FileOutputStream(script)) {
             fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
@@ -480,15 +523,38 @@ public class ScriptGenerator {
         sb.append("    TARGET_SHELL=\"/usr/bin/sh\"\n");
         sb.append("fi\n");
 
+        String chrootUser = distro.getDefaultUser();
+        if (chrootUser == null || chrootUser.trim().isEmpty()) {
+            chrootUser = "root";
+        }
+        boolean isChrootNonRoot = !"root".equalsIgnoreCase(chrootUser);
+
+        if (isChrootNonRoot) {
+            sb.append("LOGIN_USER=\"").append(chrootUser).append("\"\n");
+            sb.append("LOGIN_HOME=\"/home/").append(chrootUser).append("\"\n");
+            sb.append("mkdir -p \"$ROOTFS$LOGIN_HOME\" 2>/dev/null\n");
+            sb.append("if [ ! -f \"$ROOTFS/etc/passwd\" ] || ! grep -q \"^$LOGIN_USER:\" \"$ROOTFS/etc/passwd\"; then\n");
+            sb.append("    LOGIN_USER=\"root\"\n");
+            sb.append("    LOGIN_HOME=\"/root\"\n");
+            sb.append("fi\n");
+        } else {
+            sb.append("LOGIN_USER=\"root\"\n");
+            sb.append("LOGIN_HOME=\"/root\"\n");
+        }
+
         sb.append("chroot \"$ROOTFS\" /usr/bin/env -i \\\n");
-        sb.append("  HOME=/root \\\n");
-        sb.append("  USER=root \\\n");
-        sb.append("  LOGNAME=root \\\n");
+        sb.append("  HOME=\"$LOGIN_HOME\" \\\n");
+        sb.append("  USER=\"$LOGIN_USER\" \\\n");
+        sb.append("  LOGNAME=\"$LOGIN_USER\" \\\n");
         sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
-        sb.append("  \"$TARGET_SHELL\" --login -i\n");
+        if (isChrootNonRoot) {
+            sb.append("  \"$TARGET_SHELL\" -c 'if [ \"$LOGIN_USER\" != \"root\" ]; then (su -l \"$LOGIN_USER\" 2>/dev/null || runuser -u \"$LOGIN_USER\" -- \"$TARGET_SHELL\" --login -i 2>/dev/null || exec \"$TARGET_SHELL\" --login -i); else exec \"$TARGET_SHELL\" --login -i; fi'\n");
+        } else {
+            sb.append("  \"$TARGET_SHELL\" --login -i\n");
+        }
         sb.append("EXIT_CODE=$?\n");
         sb.append("umount -l \"$ROOTFS/storage\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/sdcard\" 2>/dev/null\n");
@@ -662,5 +728,84 @@ public class ScriptGenerator {
             Runtime.getRuntime().exec(new String[]{"chmod", "755", script.getAbsolutePath()}).waitFor();
         } catch (Exception ignored) {}
         return script;
+    }
+
+    /**
+     * Create setup-user script to create a Linux user with specified groups and sudoers entry
+     */
+    public static void setupUserScript(File rootfsDir, String username, String password, String groups) throws IOException {
+        File binDir = new File(rootfsDir, "usr/local/bin");
+        if (!binDir.exists()) {
+            binDir.mkdirs();
+        }
+        File userSetupScript = new File(binDir, "setup-user");
+        StringBuilder sb = new StringBuilder();
+        sb.append("#!/bin/sh\n");
+        sb.append("export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH\n");
+        sb.append("USERNAME=\"").append(username.replace("\"", "\\\"")).append("\"\n");
+        sb.append("PASSWORD=\"").append(password != null ? password.replace("\"", "\\\"") : "").append("\"\n");
+        sb.append("GROUPS=\"").append(groups != null ? groups.replace("\"", "\\\"") : "").append("\"\n");
+        sb.append("\n");
+        sb.append("echo \"[Nuxora] Menyiapkan pengguna Linux: $USERNAME...\"\n");
+        sb.append("TARGET_SHELL=\"/bin/sh\"\n");
+        sb.append("if [ -x \"/bin/bash\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/bin/bash\"\n");
+        sb.append("elif [ -x \"/usr/bin/bash\" ]; then\n");
+        sb.append("    TARGET_SHELL=\"/usr/bin/bash\"\n");
+        sb.append("fi\n");
+        sb.append("\n");
+        sb.append("if id \"$USERNAME\" >/dev/null 2>&1; then\n");
+        sb.append("    echo \"[Nuxora] Pengguna $USERNAME sudah terdaftar.\"\n");
+        sb.append("else\n");
+        sb.append("    if command -v useradd >/dev/null 2>&1; then\n");
+        sb.append("        useradd -m -s \"$TARGET_SHELL\" \"$USERNAME\" 2>/dev/null || useradd -m \"$USERNAME\" 2>/dev/null || true\n");
+        sb.append("    elif command -v adduser >/dev/null 2>&1; then\n");
+        sb.append("        adduser -D -s \"$TARGET_SHELL\" \"$USERNAME\" 2>/dev/null || adduser --disabled-password --gecos \"\" \"$USERNAME\" 2>/dev/null || adduser -D \"$USERNAME\" 2>/dev/null || true\n");
+        sb.append("    fi\n");
+        sb.append("fi\n");
+        sb.append("\n");
+        sb.append("mkdir -p \"/home/$USERNAME\"\n");
+        sb.append("chown -R \"$USERNAME:$USERNAME\" \"/home/$USERNAME\" 2>/dev/null || true\n");
+        sb.append("chmod 750 \"/home/$USERNAME\" 2>/dev/null || true\n");
+        sb.append("\n");
+        sb.append("if [ -n \"$PASSWORD\" ]; then\n");
+        sb.append("    echo \"$USERNAME:$PASSWORD\" | chpasswd 2>/dev/null || (echo \"$PASSWORD\"; echo \"$PASSWORD\") | passwd \"$USERNAME\" 2>/dev/null || true\n");
+        sb.append("    echo \"[Nuxora] Kata sandi untuk $USERNAME telah disetel.\"\n");
+        sb.append("else\n");
+        sb.append("    passwd -d \"$USERNAME\" 2>/dev/null || true\n");
+        sb.append("    echo \"[Nuxora] Pengguna $USERNAME disetel tanpa kata sandi.\"\n");
+        sb.append("fi\n");
+        sb.append("\n");
+        sb.append("for grp in $GROUPS; do\n");
+        sb.append("    groupadd -f \"$grp\" 2>/dev/null || addgroup \"$grp\" 2>/dev/null || true\n");
+        sb.append("    usermod -aG \"$grp\" \"$USERNAME\" 2>/dev/null || adduser \"$USERNAME\" \"$grp\" 2>/dev/null || gpasswd -a \"$USERNAME\" \"$grp\" 2>/dev/null || true\n");
+        sb.append("    echo \"[Nuxora] Menambahkan $USERNAME ke grup: $grp\"\n");
+        sb.append("done\n");
+        sb.append("\n");
+        sb.append("if echo \"$GROUPS\" | grep -E \"sudo|wheel\" >/dev/null 2>&1; then\n");
+        sb.append("    mkdir -p /etc/sudoers.d\n");
+        sb.append("    echo \"$USERNAME ALL=(ALL:ALL) NOPASSWD:ALL\" > \"/etc/sudoers.d/01_$USERNAME\"\n");
+        sb.append("    chmod 0440 \"/etc/sudoers.d/01_$USERNAME\"\n");
+        sb.append("    echo \"[Nuxora] Akses sudo telah dikonfigurasi untuk $USERNAME.\"\n");
+        sb.append("fi\n");
+        sb.append("\n");
+        sb.append("if [ ! -f \"/home/$USERNAME/.profile\" ]; then\n");
+        sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" > \"/home/$USERNAME/.profile\"\n");
+        sb.append("    echo \"export TERM=xterm-256color\" >> \"/home/$USERNAME/.profile\"\n");
+        sb.append("    echo \"export LANG=C.UTF-8\" >> \"/home/$USERNAME/.profile\"\n");
+        sb.append("    chown \"$USERNAME:$USERNAME\" \"/home/$USERNAME/.profile\" 2>/dev/null || true\n");
+        sb.append("fi\n");
+        sb.append("if [ -d \"/sdcard\" ]; then\n");
+        sb.append("    ln -sf /sdcard \"/home/$USERNAME/sdcard\" 2>/dev/null || true\n");
+        sb.append("fi\n");
+        sb.append("echo \"[Nuxora] Konfigurasi pengguna $USERNAME selesai!\"\n");
+
+        try (FileOutputStream fos = new FileOutputStream(userSetupScript)) {
+            fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        userSetupScript.setExecutable(true, false);
+        try {
+            Runtime.getRuntime().exec(new String[]{"chmod", "755", userSetupScript.getAbsolutePath()}).waitFor();
+        } catch (Exception ignored) {}
     }
 }

@@ -29,6 +29,7 @@ import com.nuxora.app.utils.DeviceUtils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -57,6 +58,18 @@ public class InstallWizardActivity extends AppCompatActivity {
     private TextInputEditText etDistroName;
     private MaterialSwitch switchMountSdcard;
     private MaterialSwitch switchInstallExtras;
+    private MaterialSwitch switchSetupUser;
+    private LinearLayout layoutUserConfig;
+    private TextInputEditText etUsername;
+    private TextInputEditText etUserPassword;
+    private Chip chipGroupSudo;
+    private Chip chipGroupAudio;
+    private Chip chipGroupVideo;
+    private Chip chipGroupStorage;
+    private Chip chipGroupNetdev;
+    private Chip chipGroupInput;
+    private Chip chipGroupUsers;
+    private MaterialSwitch switchDefaultUser;
     private LinearLayout progressSection;
     private TextView tvProgressStatus;
     private LinearProgressIndicator progressBar;
@@ -110,6 +123,25 @@ public class InstallWizardActivity extends AppCompatActivity {
             }
         });
         switchInstallExtras = findViewById(R.id.switchInstallExtras);
+        switchSetupUser = findViewById(R.id.switchSetupUser);
+        layoutUserConfig = findViewById(R.id.layoutUserConfig);
+        etUsername = findViewById(R.id.etUsername);
+        etUserPassword = findViewById(R.id.etUserPassword);
+        chipGroupSudo = findViewById(R.id.chipGroupSudo);
+        chipGroupAudio = findViewById(R.id.chipGroupAudio);
+        chipGroupVideo = findViewById(R.id.chipGroupVideo);
+        chipGroupStorage = findViewById(R.id.chipGroupStorage);
+        chipGroupNetdev = findViewById(R.id.chipGroupNetdev);
+        chipGroupInput = findViewById(R.id.chipGroupInput);
+        chipGroupUsers = findViewById(R.id.chipGroupUsers);
+        switchDefaultUser = findViewById(R.id.switchDefaultUser);
+
+        switchSetupUser.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (layoutUserConfig != null) {
+                layoutUserConfig.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            }
+        });
+
         progressSection = findViewById(R.id.progressSection);
         tvProgressStatus = findViewById(R.id.tvProgressStatus);
         progressBar = findViewById(R.id.progressBar);
@@ -186,11 +218,32 @@ public class InstallWizardActivity extends AppCompatActivity {
                 : distro.getName();
         final boolean mountSd = switchMountSdcard.isChecked();
         final boolean installExtras = switchInstallExtras != null && switchInstallExtras.isChecked();
+        final boolean setupUser = switchSetupUser != null && switchSetupUser.isChecked();
+        final String newUsername = (etUsername != null && etUsername.getText() != null)
+                ? etUsername.getText().toString().trim().toLowerCase().replaceAll("[^a-z0-9_-]", "")
+                : "user";
+        final String newPassword = (etUserPassword != null && etUserPassword.getText() != null)
+                ? etUserPassword.getText().toString()
+                : "";
 
-        new Thread(() -> performInstall(executionMode, distroDisplayName, mountSd, installExtras)).start();
+        StringBuilder groupsBuilder = new StringBuilder();
+        if (chipGroupSudo != null && chipGroupSudo.isChecked()) groupsBuilder.append("sudo wheel ");
+        if (chipGroupAudio != null && chipGroupAudio.isChecked()) groupsBuilder.append("audio ");
+        if (chipGroupVideo != null && chipGroupVideo.isChecked()) groupsBuilder.append("video ");
+        if (chipGroupStorage != null && chipGroupStorage.isChecked()) groupsBuilder.append("storage disk ");
+        if (chipGroupNetdev != null && chipGroupNetdev.isChecked()) groupsBuilder.append("netdev inet ");
+        if (chipGroupInput != null && chipGroupInput.isChecked()) groupsBuilder.append("input ");
+        if (chipGroupUsers != null && chipGroupUsers.isChecked()) groupsBuilder.append("users ");
+        final String selectedGroups = groupsBuilder.toString().trim();
+
+        final boolean isDefaultUser = switchDefaultUser != null && switchDefaultUser.isChecked() && setupUser && !newUsername.isEmpty();
+
+        new Thread(() -> performInstall(executionMode, distroDisplayName, mountSd, installExtras,
+                setupUser, newUsername, newPassword, selectedGroups, isDefaultUser)).start();
     }
 
-    private void performInstall(ExecutionMode executionMode, String distroDisplayName, boolean mountSd, boolean installExtras) {
+    private void performInstall(ExecutionMode executionMode, String distroDisplayName, boolean mountSd, boolean installExtras,
+                                boolean setupUser, String newUsername, String newPassword, String selectedGroups, boolean isDefaultUser) {
         LinuxService.startInstall(this, distroDisplayName);
         try {
             log("Memulai proses instalasi untuk " + distroDisplayName + "…");
@@ -295,12 +348,23 @@ public class InstallWizardActivity extends AppCompatActivity {
                 log("Paket penting dilewati. Anda dapat memasangnya kapan saja di terminal dengan: /usr/local/bin/install-extras");
             }
 
-            // 6. Clean downloaded archive cache
+            // 6. Setup custom user if selected
+            if (setupUser && !newUsername.isEmpty()) {
+                setStatus("Menyiapkan pengguna: " + newUsername + "…");
+                LinuxService.updateInstallProgress(this, distroDisplayName, "Menyiapkan pengguna: " + newUsername + "…", 98, true);
+                log("\n--- Menyiapkan Pengguna Baru (User Setup) ---");
+                log("Nama Pengguna: " + newUsername);
+                log("Keanggotaan Grup: " + (selectedGroups.isEmpty() ? "(default)" : selectedGroups));
+                runUserSetupInstallation(executionMode, targetRootfsDir, newUsername, newPassword, selectedGroups);
+                log("--- Konfigurasi Pengguna Selesai! ---\n");
+            }
+
+            // 7. Clean downloaded archive cache
             if (archiveFile.exists()) {
                 archiveFile.delete();
             }
 
-            // 7. Save to Database
+            // 8. Save to Database
             InstalledDistro installed = new InstalledDistro(
                     distroDisplayName,
                     distro.getId(),
@@ -310,6 +374,11 @@ public class InstallWizardActivity extends AppCompatActivity {
             installed.setMountSdcard(mountSd);
             installed.setCustomShell(distro.getDefaultShell());
             installed.setDiskUsage(DeviceUtils.formatFileSize(targetRootfsDir.length()));
+            if (isDefaultUser) {
+                installed.setDefaultUser(newUsername);
+            } else {
+                installed.setDefaultUser("root");
+            }
 
             installedDistroId = DistroDatabaseHelper.getInstance(this).insertDistro(installed);
             log("Instalasi berhasil disimpan ke database!");
@@ -372,6 +441,46 @@ public class InstallWizardActivity extends AppCompatActivity {
         } catch (Exception e) {
             log("[Peringatan] Kendala saat memasang paket penting: " + e.getMessage());
             log("Anda tetap dapat memasangnya secara manual nanti di terminal dengan: /usr/local/bin/install-extras");
+        } finally {
+            if (execScript != null && execScript.exists()) {
+                execScript.delete();
+            }
+        }
+    }
+
+    private void runUserSetupInstallation(ExecutionMode mode, File rootfsDir, String username, String password, String groups) {
+        File execScript = null;
+        try {
+            ScriptGenerator.setupUserScript(rootfsDir, username, password, groups);
+            Process process;
+            if (mode == ExecutionMode.ROOT) {
+                File binDir = new File(getFilesDir(), "bin");
+                if (!binDir.exists()) binDir.mkdirs();
+                execScript = ScriptGenerator.createChrootCommandScript(binDir, rootfsDir, "/usr/local/bin/setup-user");
+                ProcessBuilder pb = new ProcessBuilder("su", "-c", "/system/bin/sh " + execScript.getAbsolutePath());
+                pb.redirectErrorStream(true);
+                process = pb.start();
+            } else {
+                PRootManager prootManager = new PRootManager(this);
+                execScript = ScriptGenerator.createProotCommandScript(prootManager, rootfsDir, "/usr/local/bin/setup-user");
+                ProcessBuilder pb = new ProcessBuilder("/system/bin/sh", execScript.getAbsolutePath());
+                pb.redirectErrorStream(true);
+                process = pb.start();
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log(line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                log("[Pemberitahuan] Konfigurasi user selesai dengan status: " + exitCode);
+            }
+        } catch (Exception e) {
+            log("[Peringatan] Kendala saat menyiapkan pengguna baru: " + e.getMessage());
         } finally {
             if (execScript != null && execScript.exists()) {
                 execScript.delete();

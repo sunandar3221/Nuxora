@@ -13,12 +13,14 @@ public class InstalledDistro implements Serializable {
     private long installedAt;
     private String diskUsage;
     private String customShell;
+    private String defaultUser;
 
     public InstalledDistro() {
         this.installedAt = System.currentTimeMillis();
         this.mountSdcard = true;
         this.isRunning = false;
         this.diskUsage = "0 MB";
+        this.defaultUser = "root";
     }
 
     public InstalledDistro(String name, String distroKey, String rootfsPath, ExecutionMode executionMode) {
@@ -107,5 +109,13 @@ public class InstalledDistro implements Serializable {
 
     public void setCustomShell(String customShell) {
         this.customShell = customShell;
+    }
+
+    public String getDefaultUser() {
+        return defaultUser != null && !defaultUser.isEmpty() ? defaultUser : "root";
+    }
+
+    public void setDefaultUser(String defaultUser) {
+        this.defaultUser = defaultUser;
     }
 }

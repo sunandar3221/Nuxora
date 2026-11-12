@@ -9,7 +9,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20ARMv7%20%7C%20x86__64-orange.svg)](https://github.com/sunandar3221/Nuxora)
 
-[**Download Signed APK (v1.4.6)**](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.6/Nuxora-v1.4.6-signed.apk) • [**Semua Rilis**](https://github.com/sunandar3221/Nuxora/releases)
+[**Download Signed APK (v1.4.7)**](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.7/Nuxora-v1.4.7-signed.apk) • [**Semua Rilis**](https://github.com/sunandar3221/Nuxora/releases)
 
 ---
 
@@ -50,8 +50,8 @@ Unduh rilis APK terbaru melalui GitHub Releases:
 
 | Berkas | Versi | Status | Lisensi | Tautan Unduh |
 | :--- | :--- | :--- | :--- | :--- |
-| **Nuxora-v1.4.6-signed.apk** | `1.4.6` | Signed (Siap Pasang) | GPLv3 | [Download Signed APK](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.6/Nuxora-v1.4.6-signed.apk) |
-| **Nuxora-v1.4.6-unsigned.apk** | `1.4.6` | Unsigned | GPLv3 | [Download Unsigned APK](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.6/Nuxora-v1.4.6-unsigned.apk) |
+| **Nuxora-v1.4.7-signed.apk** | `1.4.7` | Signed (Siap Pasang) | GPLv3 | [Download Signed APK](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.7/Nuxora-v1.4.7-signed.apk) |
+| **Nuxora-v1.4.7-unsigned.apk** | `1.4.7` | Unsigned | GPLv3 | [Download Unsigned APK](https://github.com/sunandar3221/Nuxora/releases/download/v1.4.7/Nuxora-v1.4.7-unsigned.apk) |
 
 ### Cara Pasang:
 1. Unduh file `.apk` di atas.

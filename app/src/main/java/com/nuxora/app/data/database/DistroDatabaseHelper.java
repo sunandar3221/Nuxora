@@ -15,7 +15,7 @@ import java.util.List;
 public class DistroDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "nuxora.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     public static final String TABLE_INSTALLED = "installed_distros";
     public static final String COL_ID = "id";
@@ -28,6 +28,7 @@ public class DistroDatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_INSTALLED_AT = "installed_at";
     public static final String COL_DISK_USAGE = "disk_usage";
     public static final String COL_CUSTOM_SHELL = "custom_shell";
+    public static final String COL_DEFAULT_USER = "default_user";
 
     private static DistroDatabaseHelper instance;
 
@@ -54,14 +55,18 @@ public class DistroDatabaseHelper extends SQLiteOpenHelper {
                 COL_MOUNT_SDCARD + " INTEGER, " +
                 COL_INSTALLED_AT + " INTEGER, " +
                 COL_DISK_USAGE + " TEXT, " +
-                COL_CUSTOM_SHELL + " TEXT)";
+                COL_CUSTOM_SHELL + " TEXT, " +
+                COL_DEFAULT_USER + " TEXT)";
         db.execSQL(createTable);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_INSTALLED);
-        onCreate(db);
+        if (oldVersion < 2) {
+            try {
+                db.execSQL("ALTER TABLE " + TABLE_INSTALLED + " ADD COLUMN " + COL_DEFAULT_USER + " TEXT DEFAULT 'root'");
+            } catch (Exception ignored) {}
+        }
     }
 
     public synchronized long insertDistro(InstalledDistro distro) {
@@ -76,6 +81,7 @@ public class DistroDatabaseHelper extends SQLiteOpenHelper {
         cv.put(COL_INSTALLED_AT, distro.getInstalledAt());
         cv.put(COL_DISK_USAGE, distro.getDiskUsage());
         cv.put(COL_CUSTOM_SHELL, distro.getCustomShell());
+        cv.put(COL_DEFAULT_USER, distro.getDefaultUser());
         return db.insert(TABLE_INSTALLED, null, cv);
     }
 
@@ -124,6 +130,12 @@ public class DistroDatabaseHelper extends SQLiteOpenHelper {
                 distro.setInstalledAt(cursor.getLong(cursor.getColumnIndexOrThrow(COL_INSTALLED_AT)));
                 distro.setDiskUsage(cursor.getString(cursor.getColumnIndexOrThrow(COL_DISK_USAGE)));
                 distro.setCustomShell(cursor.getString(cursor.getColumnIndexOrThrow(COL_CUSTOM_SHELL)));
+                int userIdx = cursor.getColumnIndex(COL_DEFAULT_USER);
+                if (userIdx >= 0 && !cursor.isNull(userIdx)) {
+                    distro.setDefaultUser(cursor.getString(userIdx));
+                } else {
+                    distro.setDefaultUser("root");
+                }
                 list.add(distro);
             } while (cursor.moveToNext());
             cursor.close();
@@ -146,6 +158,12 @@ public class DistroDatabaseHelper extends SQLiteOpenHelper {
             distro.setInstalledAt(cursor.getLong(cursor.getColumnIndexOrThrow(COL_INSTALLED_AT)));
             distro.setDiskUsage(cursor.getString(cursor.getColumnIndexOrThrow(COL_DISK_USAGE)));
             distro.setCustomShell(cursor.getString(cursor.getColumnIndexOrThrow(COL_CUSTOM_SHELL)));
+            int userIdx = cursor.getColumnIndex(COL_DEFAULT_USER);
+            if (userIdx >= 0 && !cursor.isNull(userIdx)) {
+                distro.setDefaultUser(cursor.getString(userIdx));
+            } else {
+                distro.setDefaultUser("root");
+            }
             cursor.close();
             return distro;
         }

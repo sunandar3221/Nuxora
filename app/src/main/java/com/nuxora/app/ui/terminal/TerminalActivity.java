@@ -113,6 +113,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     private final List<SessionTab> activeSessions = new ArrayList<>();
     private int currentSessionIndex = 0;
+    private boolean mClosingWithoutNavigatingHome = false;
 
     // Singleton reference for external management (e.g. LinuxService stop action)
     private static java.lang.ref.WeakReference<TerminalActivity> sInstance;
@@ -455,6 +456,12 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             String[] args;
             String[] env;
 
+            String loginUser = targetDistro.getDefaultUser();
+            if (loginUser == null || loginUser.trim().isEmpty()) {
+                loginUser = "root";
+            }
+            String userHome = "root".equals(loginUser) ? "/root" : ("/home/" + loginUser);
+
             if (targetDistro.getExecutionMode() == ExecutionMode.ROOT) {
                 ChrootManager chrootManager = new ChrootManager(this);
                 File internalBin = new File(getFilesDir(), "bin");
@@ -463,9 +470,9 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
                 args = new String[]{"su", "-c", "/system/bin/sh " + script.getAbsolutePath()};
                 env = new String[]{
                         "TERM=xterm-256color",
-                        "HOME=/root",
-                        "USER=root",
-                        "LOGNAME=root",
+                        "HOME=" + userHome,
+                        "USER=" + loginUser,
+                        "LOGNAME=" + loginUser,
                         "LANG=C.UTF-8"
                 };
             } else {
@@ -475,9 +482,9 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
                 args = new String[]{"sh", script.getAbsolutePath()};
                 env = new String[]{
                         "TERM=xterm-256color",
-                        "HOME=/root",
-                        "USER=root",
-                        "LOGNAME=root",
+                        "HOME=" + userHome,
+                        "USER=" + loginUser,
+                        "LOGNAME=" + loginUser,
                         "LANG=C.UTF-8",
                         "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
                 };
@@ -536,6 +543,9 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     }
 
     public void closeAllSessions(boolean returnToHome) {
+        if (!returnToHome) {
+            mClosingWithoutNavigatingHome = true;
+        }
         if (activeSessions.isEmpty()) {
             if (returnToHome) {
                 navigateToHomeAndFinish();
@@ -545,7 +555,10 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
             return;
         }
 
-        for (SessionTab tab : new ArrayList<>(activeSessions)) {
+        List<SessionTab> sessionsToClose = new ArrayList<>(activeSessions);
+        activeSessions.clear();
+
+        for (SessionTab tab : sessionsToClose) {
             if (tab.session != null) {
                 tab.session.finishIfRunning();
             }
@@ -556,7 +569,6 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
                 DistroDatabaseHelper.getInstance(this).updateRunningStatus(tab.distro.getId(), false);
             }
         }
-        activeSessions.clear();
         LinuxService.stopTerminal(this);
         if (returnToHome) {
             navigateToHomeAndFinish();
@@ -590,7 +602,11 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
         if (activeSessions.isEmpty()) {
             LinuxService.stopTerminal(this);
-            navigateToHomeAndFinish();
+            if (!mClosingWithoutNavigatingHome) {
+                navigateToHomeAndFinish();
+            } else {
+                finish();
+            }
         } else {
             if (currentSessionIndex >= activeSessions.size()) {
                 currentSessionIndex = activeSessions.size() - 1;
@@ -733,6 +749,7 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mClosingWithoutNavigatingHome = true;
         if (sInstance != null && sInstance.get() == this) {
             sInstance = null;
         }
@@ -774,7 +791,13 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
 
     @Override
     public void onSessionFinished(TerminalSession finishedSession) {
+        if (isFinishing() || isDestroyed() || mClosingWithoutNavigatingHome) {
+            return;
+        }
         runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed() || mClosingWithoutNavigatingHome) {
+                return;
+            }
             int finishedIndex = -1;
             for (int i = 0; i < activeSessions.size(); i++) {
                 if (activeSessions.get(i).session == finishedSession) {
@@ -787,7 +810,11 @@ public class TerminalActivity extends AppCompatActivity implements TerminalSessi
                 Toast.makeText(this, "Sesi #" + finishedTab.id + " (" + finishedTab.distro.getName() + ") telah berakhir.", Toast.LENGTH_SHORT).show();
                 closeSession(finishedIndex);
             } else if (activeSessions.isEmpty()) {
-                navigateToHomeAndFinish();
+                if (!mClosingWithoutNavigatingHome) {
+                    navigateToHomeAndFinish();
+                } else {
+                    finish();
+                }
             }
         });
     }
