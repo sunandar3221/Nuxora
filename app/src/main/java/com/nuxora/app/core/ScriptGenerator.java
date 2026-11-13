@@ -238,91 +238,521 @@ public class ScriptGenerator {
         } catch (Exception ignored) {}
     }
 
-    /**
-     * Installs a protected rm wrapper to prevent accidental deletion of Android storage (/sdcard)
-     */
-    public static void setupProtectedRm(File rootfsDir) {
+    private static void writeFile(File file, String content) {
         try {
-            File binDir = new File(rootfsDir, "usr/local/bin");
-            if (!binDir.exists()) binDir.mkdirs();
-
-            File rmWrapper = new File(binDir, "rm");
-            String content = "#!/bin/sh\n" +
-                    "# Nuxora Protected rm wrapper to prevent accidental wipe of Android storage\n" +
-                    "REAL_RM=\"\"\n" +
-                    "if [ -x \"/bin/busybox\" ] && /bin/busybox rm --help >/dev/null 2>&1; then\n" +
-                    "    REAL_RM=\"/bin/busybox rm\"\n" +
-                    "elif [ -x \"/usr/bin/rm.real\" ]; then\n" +
-                    "    REAL_RM=\"/usr/bin/rm.real\"\n" +
-                    "elif [ -x \"/bin/rm.real\" ]; then\n" +
-                    "    REAL_RM=\"/bin/rm.real\"\n" +
-                    "elif [ -x \"/usr/bin/rm\" ] && [ \"/usr/bin/rm\" != \"$0\" ]; then\n" +
-                    "    REAL_RM=\"/usr/bin/rm\"\n" +
-                    "elif [ -x \"/bin/rm\" ] && [ \"/bin/rm\" != \"$0\" ]; then\n" +
-                    "    REAL_RM=\"/bin/rm\"\n" +
-                    "else\n" +
-                    "    REAL_RM=\"rm\"\n" +
-                    "fi\n" +
-                    "\n" +
-                    "is_recursive=0\n" +
-                    "for arg in \"$@\"; do\n" +
-                    "    case \"$arg\" in\n" +
-                    "        -r|-R|-rf|-fr|-rfi|-fir|-rI|-Ir|--recursive|--recursive*)\n" +
-                    "            is_recursive=1\n" +
-                    "            ;;\n" +
-                    "    esac\n" +
-                    "done\n" +
-                    "\n" +
-                    "if [ \"$is_recursive\" -eq 1 ]; then\n" +
-                    "    FILTERED_ARGS=\"\"\n" +
-                    "    for arg in \"$@\"; do\n" +
-                    "        clean_arg=\"$(echo \"$arg\" | sed 's:/*$::')\"\n" +
-                    "        [ -z \"$clean_arg\" ] && clean_arg=\"/\"\n" +
-                    "        case \"$clean_arg\" in\n" +
-                    "            /|/*|/sdcard|/mnt/sdcard|/storage|/storage/emulated|/storage/emulated/0|/root/sdcard|/home/*/sdcard)\n" +
-                    "                echo \"[Nuxora Security] Penghapusan rekursif pada '$arg' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
-                    "                ;;\n" +
-                    "            *)\n" +
-                    "                FILTERED_ARGS=\"$FILTERED_ARGS \\\"$arg\\\"\"\n" +
-                    "                ;;\n" +
-                    "        esac\n" +
-                    "    done\n" +
-                    "    if [ -z \"$FILTERED_ARGS\" ]; then\n" +
-                    "        exit 1\n" +
-                    "    fi\n" +
-                    "    eval \"$REAL_RM $FILTERED_ARGS\"\n" +
-                    "else\n" +
-                    "    $REAL_RM \"$@\"\n" +
-                    "fi\n";
-
-            try (FileOutputStream fos = new FileOutputStream(rmWrapper)) {
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists()) parent.mkdirs();
+            try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(content.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException ignored) {}
-            rmWrapper.setExecutable(true, false);
-
-            // Also safeguard /bin/rm and /usr/bin/rm if they are real binaries
-            File binRm = new File(rootfsDir, "bin/rm");
-            File binRmReal = new File(rootfsDir, "bin/rm.real");
-            File usrBinRm = new File(rootfsDir, "usr/bin/rm");
-            File usrBinRmReal = new File(rootfsDir, "usr/bin/rm.real");
-
-            if (binRm.exists() && !java.nio.file.Files.isSymbolicLink(binRm.toPath()) && !binRmReal.exists()) {
-                binRm.renameTo(binRmReal);
-                binRmReal.setExecutable(true, false);
-                try (FileOutputStream fos = new FileOutputStream(binRm)) {
-                    fos.write(content.getBytes(StandardCharsets.UTF_8));
-                }
-                binRm.setExecutable(true, false);
-            }
-            if (usrBinRm.exists() && !java.nio.file.Files.isSymbolicLink(usrBinRm.toPath()) && !usrBinRmReal.exists()) {
-                usrBinRm.renameTo(usrBinRmReal);
-                usrBinRmReal.setExecutable(true, false);
-                try (FileOutputStream fos = new FileOutputStream(usrBinRm)) {
-                    fos.write(content.getBytes(StandardCharsets.UTF_8));
-                }
-                usrBinRm.setExecutable(true, false);
             }
         } catch (Exception ignored) {}
+    }
+
+    private static void setupBinaryWrapper(File rootfsDir, String binaryName, String wrapperContent) {
+        try {
+            File usrLocalBin = new File(rootfsDir, "usr/local/bin");
+            if (!usrLocalBin.exists()) usrLocalBin.mkdirs();
+
+            File localWrapper = new File(usrLocalBin, binaryName);
+            writeFile(localWrapper, wrapperContent);
+            localWrapper.setExecutable(true, false);
+
+            File[] targets = new File[]{
+                new File(rootfsDir, "bin/" + binaryName),
+                new File(rootfsDir, "usr/bin/" + binaryName)
+            };
+
+            for (File target : targets) {
+                if (!target.exists() && !java.nio.file.Files.isSymbolicLink(target.toPath())) {
+                    continue;
+                }
+                File realFile = new File(target.getParentFile(), binaryName + ".real");
+                if (realFile.exists()) {
+                    writeFile(target, wrapperContent);
+                    target.setExecutable(true, false);
+                    continue;
+                }
+
+                if (java.nio.file.Files.isSymbolicLink(target.toPath())) {
+                    try {
+                        java.nio.file.Path realPath = target.toPath().toRealPath();
+                        String realName = realPath.getFileName().toString();
+                        if (realName.equals(binaryName)) {
+                            File resolvedFile = realPath.toFile();
+                            File resolvedReal = new File(resolvedFile.getParentFile(), binaryName + ".real");
+                            if (!resolvedReal.exists()) {
+                                resolvedFile.renameTo(resolvedReal);
+                                resolvedReal.setExecutable(true, false);
+                                writeFile(resolvedFile, wrapperContent);
+                                resolvedFile.setExecutable(true, false);
+                            }
+                        } else {
+                            target.delete();
+                            writeFile(target, wrapperContent);
+                            target.setExecutable(true, false);
+                        }
+                    } catch (Exception e) {
+                        try {
+                            target.delete();
+                            writeFile(target, wrapperContent);
+                            target.setExecutable(true, false);
+                        } catch (Exception ignored) {}
+                    }
+                } else {
+                    target.renameTo(realFile);
+                    realFile.setExecutable(true, false);
+                    writeFile(target, wrapperContent);
+                    target.setExecutable(true, false);
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private static String getRmWrapperContent() {
+        return "#!/bin/sh\n" +
+                "# Nuxora Protected rm wrapper\n" +
+                "REAL_RM=\"\"\n" +
+                "if [ -x \"/bin/busybox\" ] && /bin/busybox rm --help >/dev/null 2>&1; then\n" +
+                "    REAL_RM=\"/bin/busybox rm\"\n" +
+                "elif [ -x \"/usr/bin/rm.real\" ]; then\n" +
+                "    REAL_RM=\"/usr/bin/rm.real\"\n" +
+                "elif [ -x \"/bin/rm.real\" ]; then\n" +
+                "    REAL_RM=\"/bin/rm.real\"\n" +
+                "elif [ -x \"/usr/bin/rm\" ] && [ \"/usr/bin/rm\" != \"$0\" ]; then\n" +
+                "    REAL_RM=\"/usr/bin/rm\"\n" +
+                "elif [ -x \"/bin/rm\" ] && [ \"/bin/rm\" != \"$0\" ]; then\n" +
+                "    REAL_RM=\"/bin/rm\"\n" +
+                "else\n" +
+                "    REAL_RM=\"rm\"\n" +
+                "fi\n" +
+                "\n" +
+                "is_protected_target() {\n" +
+                "    target=\"$(echo \"$1\" | sed 's:/*$::')\"\n" +
+                "    [ -z \"$target\" ] && target=\"/\"\n" +
+                "    case \"$target\" in\n" +
+                "        /|/*|sdcard|./sdcard|*/sdcard|/sdcard|/mnt/sdcard|/storage|/storage/*|/storage/emulated|/storage/emulated/0|/root/sdcard|/home/*/sdcard)\n" +
+                "            return 0\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "    return 1\n" +
+                "}\n" +
+                "\n" +
+                "FILTERED_ARGS=\"\"\n" +
+                "has_blocked=0\n" +
+                "for arg in \"$@\"; do\n" +
+                "    case \"$arg\" in\n" +
+                "        -*)\n" +
+                "            FILTERED_ARGS=\"$FILTERED_ARGS \\\"$arg\\\"\"\n" +
+                "            ;;\n" +
+                "        *)\n" +
+                "            if is_protected_target \"$arg\"; then\n" +
+                "                echo \"[Nuxora Security] Penghapusan '$arg' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
+                "                has_blocked=1\n" +
+                "            else\n" +
+                "                FILTERED_ARGS=\"$FILTERED_ARGS \\\"$arg\\\"\"\n" +
+                "            fi\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "done\n" +
+                "\n" +
+                "has_operands=0\n" +
+                "for a in $FILTERED_ARGS; do\n" +
+                "    case \"$a\" in\n" +
+                "        \\\"-*)\n" +
+                "            ;;\n" +
+                "        *)\n" +
+                "            has_operands=1\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "done\n" +
+                "\n" +
+                "if [ \"$has_blocked\" -eq 1 ] && [ \"$has_operands\" -eq 0 ]; then\n" +
+                "    exit 1\n" +
+                "fi\n" +
+                "\n" +
+                "if [ -z \"$FILTERED_ARGS\" ]; then\n" +
+                "    exit 1\n" +
+                "fi\n" +
+                "\n" +
+                "eval \"$REAL_RM $FILTERED_ARGS\"\n";
+    }
+
+    private static String getRmdirWrapperContent() {
+        return "#!/bin/sh\n" +
+                "# Nuxora Protected rmdir wrapper\n" +
+                "REAL_RMDIR=\"\"\n" +
+                "if [ -x \"/bin/busybox\" ] && /bin/busybox rmdir --help >/dev/null 2>&1; then\n" +
+                "    REAL_RMDIR=\"/bin/busybox rmdir\"\n" +
+                "elif [ -x \"/usr/bin/rmdir.real\" ]; then\n" +
+                "    REAL_RMDIR=\"/usr/bin/rmdir.real\"\n" +
+                "elif [ -x \"/bin/rmdir.real\" ]; then\n" +
+                "    REAL_RMDIR=\"/bin/rmdir.real\"\n" +
+                "elif [ -x \"/usr/bin/rmdir\" ] && [ \"/usr/bin/rmdir\" != \"$0\" ]; then\n" +
+                "    REAL_RMDIR=\"/usr/bin/rmdir\"\n" +
+                "elif [ -x \"/bin/rmdir\" ] && [ \"/bin/rmdir\" != \"$0\" ]; then\n" +
+                "    REAL_RMDIR=\"/bin/rmdir\"\n" +
+                "else\n" +
+                "    REAL_RMDIR=\"rmdir\"\n" +
+                "fi\n" +
+                "\n" +
+                "for arg in \"$@\"; do\n" +
+                "    case \"$arg\" in\n" +
+                "        -*)\n" +
+                "            ;;\n" +
+                "        *)\n" +
+                "            target=\"$(echo \"$arg\" | sed 's:/*$::')\"\n" +
+                "            [ -z \"$target\" ] && target=\"/\"\n" +
+                "            case \"$target\" in\n" +
+                "                /|/*|sdcard|./sdcard|*/sdcard|/sdcard|/mnt/sdcard|/storage|/storage/*|/storage/emulated|/storage/emulated/0|/root/sdcard|/home/*/sdcard)\n" +
+                "                    echo \"[Nuxora Security] Penghapusan direktori '$arg' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
+                "                    exit 1\n" +
+                "                    ;;\n" +
+                "            esac\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "done\n" +
+                "\n" +
+                "exec $REAL_RMDIR \"$@\"\n";
+    }
+
+    private static String getUnlinkWrapperContent() {
+        return "#!/bin/sh\n" +
+                "# Nuxora Protected unlink wrapper\n" +
+                "REAL_UNLINK=\"\"\n" +
+                "if [ -x \"/bin/busybox\" ] && /bin/busybox unlink --help >/dev/null 2>&1; then\n" +
+                "    REAL_UNLINK=\"/bin/busybox unlink\"\n" +
+                "elif [ -x \"/usr/bin/unlink.real\" ]; then\n" +
+                "    REAL_UNLINK=\"/usr/bin/unlink.real\"\n" +
+                "elif [ -x \"/bin/unlink.real\" ]; then\n" +
+                "    REAL_UNLINK=\"/bin/unlink.real\"\n" +
+                "elif [ -x \"/usr/bin/unlink\" ] && [ \"/usr/bin/unlink\" != \"$0\" ]; then\n" +
+                "    REAL_UNLINK=\"/usr/bin/unlink\"\n" +
+                "elif [ -x \"/bin/unlink\" ] && [ \"/bin/unlink\" != \"$0\" ]; then\n" +
+                "    REAL_UNLINK=\"/bin/unlink\"\n" +
+                "else\n" +
+                "    REAL_UNLINK=\"unlink\"\n" +
+                "fi\n" +
+                "\n" +
+                "for arg in \"$@\"; do\n" +
+                "    case \"$arg\" in\n" +
+                "        -*)\n" +
+                "            ;;\n" +
+                "        *)\n" +
+                "            target=\"$(echo \"$arg\" | sed 's:/*$::')\"\n" +
+                "            [ -z \"$target\" ] && target=\"/\"\n" +
+                "            case \"$target\" in\n" +
+                "                /|/*|sdcard|./sdcard|*/sdcard|/sdcard|/mnt/sdcard|/storage|/storage/*|/storage/emulated|/storage/emulated/0|/root/sdcard|/home/*/sdcard)\n" +
+                "                    echo \"[Nuxora Security] Penghapusan '$arg' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
+                "                    exit 1\n" +
+                "                    ;;\n" +
+                "            esac\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "done\n" +
+                "\n" +
+                "exec $REAL_UNLINK \"$@\"\n";
+    }
+
+    private static String getFindWrapperContent() {
+        return "#!/bin/sh\n" +
+                "# Nuxora Protected find wrapper\n" +
+                "REAL_FIND=\"\"\n" +
+                "if [ -x \"/bin/busybox\" ] && /bin/busybox find --help >/dev/null 2>&1; then\n" +
+                "    REAL_FIND=\"/bin/busybox find\"\n" +
+                "elif [ -x \"/usr/bin/find.real\" ]; then\n" +
+                "    REAL_FIND=\"/usr/bin/find.real\"\n" +
+                "elif [ -x \"/bin/find.real\" ]; then\n" +
+                "    REAL_FIND=\"/bin/find.real\"\n" +
+                "elif [ -x \"/usr/bin/find\" ] && [ \"/usr/bin/find\" != \"$0\" ]; then\n" +
+                "    REAL_FIND=\"/usr/bin/find\"\n" +
+                "elif [ -x \"/bin/find\" ] && [ \"/bin/find\" != \"$0\" ]; then\n" +
+                "    REAL_FIND=\"/bin/find\"\n" +
+                "else\n" +
+                "    REAL_FIND=\"find\"\n" +
+                "fi\n" +
+                "\n" +
+                "has_delete=0\n" +
+                "for arg in \"$@\"; do\n" +
+                "    case \"$arg\" in\n" +
+                "        -delete)\n" +
+                "            has_delete=1\n" +
+                "            break\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "done\n" +
+                "\n" +
+                "if [ \"$has_delete\" -eq 1 ]; then\n" +
+                "    cur_pwd=\"$(pwd 2>/dev/null)\"\n" +
+                "    case \"$cur_pwd\" in\n" +
+                "        /|/root|/home/*|/sdcard|/mnt/sdcard|/storage)\n" +
+                "            echo \"[Nuxora Security] Perintah find dengan -delete pada direktori '$cur_pwd' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
+                "            exit 1\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "    for arg in \"$@\"; do\n" +
+                "        clean=\"$(echo \"$arg\" | sed 's:/*$::')\"\n" +
+                "        case \"$clean\" in\n" +
+                "            /|/*|*sdcard*|/storage|/storage/*|/mnt/sdcard)\n" +
+                "                echo \"[Nuxora Security] Perintah find dengan -delete pada '$arg' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
+                "                exit 1\n" +
+                "                ;;\n" +
+                "        esac\n" +
+                "    done\n" +
+                "fi\n" +
+                "\n" +
+                "exec $REAL_FIND \"$@\"\n";
+    }
+
+    private static String getRsyncWrapperContent() {
+        return "#!/bin/sh\n" +
+                "# Nuxora Protected rsync wrapper\n" +
+                "REAL_RSYNC=\"\"\n" +
+                "if [ -x \"/usr/bin/rsync.real\" ]; then\n" +
+                "    REAL_RSYNC=\"/usr/bin/rsync.real\"\n" +
+                "elif [ -x \"/bin/rsync.real\" ]; then\n" +
+                "    REAL_RSYNC=\"/bin/rsync.real\"\n" +
+                "elif [ -x \"/usr/bin/rsync\" ] && [ \"/usr/bin/rsync\" != \"$0\" ]; then\n" +
+                "    REAL_RSYNC=\"/usr/bin/rsync\"\n" +
+                "elif [ -x \"/bin/rsync\" ] && [ \"/bin/rsync\" != \"$0\" ]; then\n" +
+                "    REAL_RSYNC=\"/bin/rsync\"\n" +
+                "else\n" +
+                "    REAL_RSYNC=\"rsync\"\n" +
+                "fi\n" +
+                "\n" +
+                "has_delete=0\n" +
+                "for arg in \"$@\"; do\n" +
+                "    case \"$arg\" in\n" +
+                "        --delete|--delete-*|--del)\n" +
+                "            has_delete=1\n" +
+                "            break\n" +
+                "            ;;\n" +
+                "    esac\n" +
+                "done\n" +
+                "\n" +
+                "if [ \"$has_delete\" -eq 1 ]; then\n" +
+                "    for arg in \"$@\"; do\n" +
+                "        clean=\"$(echo \"$arg\" | sed 's:/*$::')\"\n" +
+                "        case \"$clean\" in\n" +
+                "            *sdcard*|/storage|/storage/*|/mnt/sdcard|/|/root|/home/*)\n" +
+                "                echo \"[Nuxora Security] Opsi --delete pada rsync untuk '$arg' DIBLOKIR untuk melindungi penyimpanan Android!\" >&2\n" +
+                "                exit 1\n" +
+                "                ;;\n" +
+                "        esac\n" +
+                "    done\n" +
+                "fi\n" +
+                "\n" +
+                "exec $REAL_RSYNC \"$@\"\n";
+    }
+
+    private static String getBusyboxWrapperContent() {
+        return "#!/bin/sh\n" +
+                "# Nuxora Protected busybox wrapper\n" +
+                "REAL_BUSYBOX=\"\"\n" +
+                "if [ -x \"/bin/busybox.real\" ]; then\n" +
+                "    REAL_BUSYBOX=\"/bin/busybox.real\"\n" +
+                "elif [ -x \"/usr/bin/busybox.real\" ]; then\n" +
+                "    REAL_BUSYBOX=\"/usr/bin/busybox.real\"\n" +
+                "elif [ -x \"/bin/busybox\" ] && [ \"/bin/busybox\" != \"$0\" ]; then\n" +
+                "    REAL_BUSYBOX=\"/bin/busybox\"\n" +
+                "elif [ -x \"/usr/bin/busybox\" ] && [ \"/usr/bin/busybox\" != \"$0\" ]; then\n" +
+                "    REAL_BUSYBOX=\"/usr/bin/busybox\"\n" +
+                "else\n" +
+                "    REAL_BUSYBOX=\"busybox\"\n" +
+                "fi\n" +
+                "\n" +
+                "if [ \"$1\" = \"rm\" ] || [ \"$1\" = \"rmdir\" ] || [ \"$1\" = \"unlink\" ]; then\n" +
+                "    cmd=\"$1\"\n" +
+                "    shift\n" +
+                "    exec \"$cmd\" \"$@\"\n" +
+                "fi\n" +
+                "\n" +
+                "exec $REAL_BUSYBOX \"$@\"\n";
+    }
+
+    public static void setupPythonProtection(File rootfsDir) {
+        try {
+            File pyDir = new File(rootfsDir, "usr/local/lib/nuxora_python");
+            if (!pyDir.exists()) pyDir.mkdirs();
+
+            String pythonHook = "import os\n" +
+                    "import sys\n" +
+                    "\n" +
+                    "def _is_protected(path):\n" +
+                    "    if not path:\n" +
+                    "        return False\n" +
+                    "    try:\n" +
+                    "        if isinstance(path, (bytes, bytearray)):\n" +
+                    "            p_str = path.decode('utf-8', errors='ignore')\n" +
+                    "        else:\n" +
+                    "            p_str = str(path)\n" +
+                    "    except Exception:\n" +
+                    "        p_str = str(path)\n" +
+                    "    p_str = p_str.strip()\n" +
+                    "    if not p_str:\n" +
+                    "        return False\n" +
+                    "    try:\n" +
+                    "        norm = os.path.normpath(p_str).rstrip('/')\n" +
+                    "    except Exception:\n" +
+                    "        norm = p_str.rstrip('/')\n" +
+                    "    try:\n" +
+                    "        abs_norm = os.path.abspath(norm).rstrip('/')\n" +
+                    "    except Exception:\n" +
+                    "        abs_norm = norm\n" +
+                    "    if not norm or not abs_norm or norm == '/' or abs_norm == '/':\n" +
+                    "        return True\n" +
+                    "    protected_prefixes = (\n" +
+                    "        '/sdcard',\n" +
+                    "        '/mnt/sdcard',\n" +
+                    "        '/storage',\n" +
+                    "        '/storage/emulated',\n" +
+                    "        '/storage/emulated/0',\n" +
+                    "        '/root/sdcard'\n" +
+                    "    )\n" +
+                    "    if norm in protected_prefixes or abs_norm in protected_prefixes:\n" +
+                    "        return True\n" +
+                    "    if abs_norm.startswith('/home/') and abs_norm.endswith('/sdcard'):\n" +
+                    "        parts = abs_norm.split('/')\n" +
+                    "        if len(parts) == 4 and parts[3] == 'sdcard':\n" +
+                    "            return True\n" +
+                    "    base = os.path.basename(norm)\n" +
+                    "    if base in ('sdcard', 'mnt/sdcard'):\n" +
+                    "        try:\n" +
+                    "            cwd = os.getcwd()\n" +
+                    "            if cwd in ('/', '/root') or cwd.startswith('/home/'):\n" +
+                    "                return True\n" +
+                    "        except Exception:\n" +
+                    "            return True\n" +
+                    "    return False\n" +
+                    "\n" +
+                    "_orig_unlink = os.unlink\n" +
+                    "def _safe_unlink(path, *args, **kwargs):\n" +
+                    "    if _is_protected(path):\n" +
+                    "        raise PermissionError(f\"[Nuxora Security] Penghapusan '{path}' DIBLOKIR untuk melindungi penyimpanan Android!\")\n" +
+                    "    return _orig_unlink(path, *args, **kwargs)\n" +
+                    "\n" +
+                    "os.unlink = _safe_unlink\n" +
+                    "os.remove = _safe_unlink\n" +
+                    "\n" +
+                    "_orig_rmdir = os.rmdir\n" +
+                    "def _safe_rmdir(path, *args, **kwargs):\n" +
+                    "    if _is_protected(path):\n" +
+                    "        raise PermissionError(f\"[Nuxora Security] Penghapusan direktori '{path}' DIBLOKIR untuk melindungi penyimpanan Android!\")\n" +
+                    "    return _orig_rmdir(path, *args, **kwargs)\n" +
+                    "\n" +
+                    "os.rmdir = _safe_rmdir\n" +
+                    "\n" +
+                    "try:\n" +
+                    "    import shutil\n" +
+                    "    _orig_rmtree = shutil.rmtree\n" +
+                    "    def _safe_rmtree(path, *args, **kwargs):\n" +
+                    "        if _is_protected(path):\n" +
+                    "            raise PermissionError(f\"[Nuxora Security] Penghapusan direktori rekursif '{path}' DIBLOKIR untuk melindungi penyimpanan Android!\")\n" +
+                    "        return _orig_rmtree(path, *args, **kwargs)\n" +
+                    "    shutil.rmtree = _safe_rmtree\n" +
+                    "except Exception:\n" +
+                    "    pass\n" +
+                    "\n" +
+                    "_orig_rename = os.rename\n" +
+                    "def _safe_rename(src, dst, *args, **kwargs):\n" +
+                    "    if _is_protected(src):\n" +
+                    "        raise PermissionError(f\"[Nuxora Security] Pemindahan/pengubahan nama '{src}' DIBLOKIR untuk melindungi penyimpanan Android!\")\n" +
+                    "    return _orig_rename(src, dst, *args, **kwargs)\n" +
+                    "\n" +
+                    "os.rename = _safe_rename\n" +
+                    "if hasattr(os, 'replace'):\n" +
+                    "    _orig_replace = os.replace\n" +
+                    "    def _safe_replace(src, dst, *args, **kwargs):\n" +
+                    "        if _is_protected(src):\n" +
+                    "            raise PermissionError(f\"[Nuxora Security] Pemindahan/pengubahan nama '{src}' DIBLOKIR untuk melindungi penyimpanan Android!\")\n" +
+                    "        return _orig_replace(src, dst, *args, **kwargs)\n" +
+                    "    os.replace = _safe_replace\n";
+
+            writeFile(new File(pyDir, "sitecustomize.py"), pythonHook);
+
+            File etcPy3 = new File(rootfsDir, "etc/python3");
+            if (!etcPy3.exists()) etcPy3.mkdirs();
+            writeFile(new File(etcPy3, "sitecustomize.py"), pythonHook);
+
+            File etcPy = new File(rootfsDir, "etc/python");
+            if (!etcPy.exists()) etcPy.mkdirs();
+            writeFile(new File(etcPy, "sitecustomize.py"), pythonHook);
+
+            File usrLib = new File(rootfsDir, "usr/lib");
+            if (usrLib.exists() && usrLib.isDirectory()) {
+                File[] pyDirs = usrLib.listFiles((dir, name) -> name.startsWith("python"));
+                if (pyDirs != null) {
+                    for (File pDir : pyDirs) {
+                        if (pDir.isDirectory()) {
+                            File dist = new File(pDir, "dist-packages");
+                            if (dist.exists() && dist.isDirectory()) {
+                                writeFile(new File(dist, "sitecustomize.py"), pythonHook);
+                            }
+                            File site = new File(pDir, "site-packages");
+                            if (site.exists() && site.isDirectory()) {
+                                writeFile(new File(site, "sitecustomize.py"), pythonHook);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Installs comprehensive protection against accidental deletion of Android storage (/sdcard)
+     * across rm, rmdir, unlink, find, rsync, busybox, and python scripts.
+     */
+    public static void setupStorageProtection(File rootfsDir) {
+        try {
+            setupBinaryWrapper(rootfsDir, "rm", getRmWrapperContent());
+            setupBinaryWrapper(rootfsDir, "rmdir", getRmdirWrapperContent());
+            setupBinaryWrapper(rootfsDir, "unlink", getUnlinkWrapperContent());
+            setupBinaryWrapper(rootfsDir, "find", getFindWrapperContent());
+            setupBinaryWrapper(rootfsDir, "rsync", getRsyncWrapperContent());
+            setupBinaryWrapper(rootfsDir, "busybox", getBusyboxWrapperContent());
+            setupPythonProtection(rootfsDir);
+
+            // Ensure mount point directories exist
+            new File(rootfsDir, "sdcard").mkdirs();
+            new File(rootfsDir, "mnt/sdcard").mkdirs();
+            new File(rootfsDir, "storage").mkdirs();
+
+            // Self-healing shell guardian script in /etc/profile.d/
+            File profileD = new File(rootfsDir, "etc/profile.d");
+            if (!profileD.exists()) profileD.mkdirs();
+            File guardScript = new File(profileD, "01-nuxora-sdcard.sh");
+            String guardContent = "#!/bin/sh\n" +
+                    "# Nuxora Storage Guardian\n" +
+                    "export PYTHONPATH=/usr/local/lib/nuxora_python:$PYTHONPATH\n" +
+                    "_nuxora_sdcard_heal() {\n" +
+                    "    [ -d /sdcard ] || mkdir -p /sdcard 2>/dev/null\n" +
+                    "    [ -L /root/sdcard ] || ln -sf /sdcard /root/sdcard 2>/dev/null\n" +
+                    "    if [ -n \"$HOME\" ] && [ \"$HOME\" != \"/root\" ]; then\n" +
+                    "        [ -L \"$HOME/sdcard\" ] || ln -sf /sdcard \"$HOME/sdcard\" 2>/dev/null\n" +
+                    "    fi\n" +
+                    "}\n" +
+                    "_nuxora_sdcard_heal\n" +
+                    "if [ -n \"$BASH_VERSION\" ]; then\n" +
+                    "    if [ -z \"$PROMPT_COMMAND\" ]; then\n" +
+                    "        PROMPT_COMMAND=\"_nuxora_sdcard_heal\"\n" +
+                    "    else\n" +
+                    "        case \"$PROMPT_COMMAND\" in\n" +
+                    "            *_nuxora_sdcard_heal*) ;;\n" +
+                    "            *) PROMPT_COMMAND=\"_nuxora_sdcard_heal; $PROMPT_COMMAND\" ;;\n" +
+                    "        esac\n" +
+                    "    fi\n" +
+                    "    alias ls='_nuxora_sdcard_heal; ls --color=auto'\n" +
+                    "fi\n";
+            writeFile(guardScript, guardContent);
+            guardScript.setExecutable(true, false);
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Backward-compatible alias for setupStorageProtection
+     */
+    public static void setupProtectedRm(File rootfsDir) {
+        setupStorageProtection(rootfsDir);
     }
 
     /**
@@ -427,6 +857,7 @@ public class ScriptGenerator {
         sb.append("# Nuxora Shell Environment\n");
         sb.append("export TERM=xterm-256color\n");
         sb.append("export LANG=C.UTF-8\n");
+        sb.append("export PYTHONPATH=/usr/local/lib/nuxora_python:$PYTHONPATH\n");
         sb.append("if [ -n \"$BASH_VERSION\" ]; then\n");
         sb.append("    if [ \"$(id -u 2>/dev/null)\" = \"0\" ]; then\n");
         sb.append("        [ -z \"$HOME\" ] && export HOME=/root\n");
@@ -683,6 +1114,7 @@ public class ScriptGenerator {
         sb.append("  LOGNAME=\"$LOGIN_USER\" \\\n");
         sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
+        sb.append("  PYTHONPATH=/usr/local/lib/nuxora_python \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
         sb.append("  \"$TARGET_SHELL\" -l\n");
@@ -790,6 +1222,7 @@ public class ScriptGenerator {
         sb.append("  LOGNAME=\"$LOGIN_USER\" \\\n");
         sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
+        sb.append("  PYTHONPATH=/usr/local/lib/nuxora_python \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
         sb.append("  \"$TARGET_SHELL\" -l\n");
@@ -916,6 +1349,7 @@ public class ScriptGenerator {
         sb.append("  LOGNAME=root \\\n");
         sb.append("  SHELL=\"$TARGET_SHELL\" \\\n");
         sb.append("  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \\\n");
+        sb.append("  PYTHONPATH=/usr/local/lib/nuxora_python \\\n");
         sb.append("  TERM=xterm-256color \\\n");
         sb.append("  LANG=C.UTF-8 \\\n");
         sb.append("  \"$TARGET_SHELL\" -c \"").append(command.replace("\"", "\\\"")).append("\"\n");
@@ -955,7 +1389,7 @@ public class ScriptGenerator {
         sb.append("    TARGET_SHELL=\"/usr/bin/sh\"\n");
         sb.append("fi\n");
 
-        sb.append("chroot \"$ROOTFS\" /usr/bin/env -i HOME=/root USER=root LOGNAME=root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin TERM=xterm-256color LANG=C.UTF-8 \"$TARGET_SHELL\" -c \"").append(command.replace("\"", "\\\"")).append("\"\n");
+        sb.append("chroot \"$ROOTFS\" /usr/bin/env -i HOME=/root USER=root LOGNAME=root PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin PYTHONPATH=/usr/local/lib/nuxora_python TERM=xterm-256color LANG=C.UTF-8 \"$TARGET_SHELL\" -c \"").append(command.replace("\"", "\\\"")).append("\"\n");
         sb.append("EXIT_CODE=$?\n");
         sb.append("umount -l \"$ROOTFS/dev/pts\" 2>/dev/null\n");
         sb.append("umount -l \"$ROOTFS/dev\" 2>/dev/null\n");
@@ -1064,6 +1498,7 @@ public class ScriptGenerator {
         sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" >> \"$PROFILE\"\n");
         sb.append("    echo \"export TERM=xterm-256color\" >> \"$PROFILE\"\n");
         sb.append("    echo \"export LANG=C.UTF-8\" >> \"$PROFILE\"\n");
+        sb.append("    echo \"export PYTHONPATH=/usr/local/lib/nuxora_python:$PYTHONPATH\" >> \"$PROFILE\"\n");
         sb.append("    chown \"$USERNAME:$USERNAME\" \"$PROFILE\" 2>/dev/null || chown 1000:1000 \"$PROFILE\" 2>/dev/null || true\n");
         sb.append("fi\n");
         sb.append("BASHRC=\"/home/$USERNAME/.bashrc\"\n");
@@ -1072,6 +1507,7 @@ public class ScriptGenerator {
         sb.append("    echo \"export PS1='\\\\[\\\\033[01;32m\\\\]\\\\u@\\\\h\\\\[\\\\033[00m\\\\]:\\\\[\\\\033[01;34m\\\\]\\\\w\\\\[\\\\033[00m\\\\]$ '\" >> \"$BASHRC\"\n");
         sb.append("    echo \"export TERM=xterm-256color\" >> \"$BASHRC\"\n");
         sb.append("    echo \"export LANG=C.UTF-8\" >> \"$BASHRC\"\n");
+        sb.append("    echo \"export PYTHONPATH=/usr/local/lib/nuxora_python:$PYTHONPATH\" >> \"$BASHRC\"\n");
         sb.append("    chown \"$USERNAME:$USERNAME\" \"$BASHRC\" 2>/dev/null || chown 1000:1000 \"$BASHRC\" 2>/dev/null || true\n");
         sb.append("fi\n");
         sb.append("if [ -d \"/sdcard\" ]; then\n");
